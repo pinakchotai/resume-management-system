@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - Resume Management System</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body>
+    <div class="container" x-data="formHandler">
+        <header>
+            <h1>Resume Management Dashboard</h1>
+        </header>
+
+        <main>
+            <div class="submissions-list">
+                <h2>Submitted Resumes</h2>
+                <template x-if="submissions.length === 0">
+                    <p>No submissions yet.</p>
+                </template>
+                <template x-for="submission in submissions" :key="submission.id">
+                    <div class="submission-card">
+                        <h3 x-text="submission.fullName"></h3>
+                        <p>Email: <span x-text="submission.email"></span></p>
+                        <p>Phone: <span x-text="submission.phone"></span></p>
+                        <p>Experience: <span x-text="submission.experience"></span> years</p>
+                        <p>Submitted: <span x-text="new Date(submission.submittedAt).toLocaleString()"></span></p>
+                        <button @click="downloadResume(submission.id)">Download Resume</button>
+                    </div>
+                </template>
+            </div>
+        </main>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
