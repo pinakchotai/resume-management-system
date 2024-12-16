@@ -1,25 +1,26 @@
 {
   "name": "resume-management-system",
-  "version": "1.1.0",
-  "main": "server.js",
+  "version": "1.0.1",
+  "description": "A system to manage resume submissions",
   "type": "module",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "dependencies": {
     "bcryptjs": "^2.4.3",
-    "cookie-parser": "^1.4.7",
+    "cookie-parser": "^1.4.6",
     "dotenv": "^16.0.3",
-    "express": "^4.21.1",
-    "firebase": "^11.0.2",
-    "firebase-admin": "^13.0.1",
-    "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.9.0",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.0",
+    "mongoose": "^7.0.3",
     "multer": "^1.4.5-lts.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
   }
 }
