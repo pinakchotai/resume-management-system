@@ -5,70 +5,68 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.1] - 2023-12-16
+## [1.0.2] - 2024-01-09
 
 ### Added
-- Modern UI design with improved user experience
-- Interactive skills input with tag system
-- Drag and drop file upload functionality
-- Loading indicators for all actions
-- Better form validation with instant feedback
-- Empty state handling in admin dashboard
-- Proper error messages and notifications
+- Modern UI design with Bootstrap 5.3.2
+- Google Fonts (Inter) for improved typography
+- Custom CSS variables for consistent theming
+- Responsive navbar with blur effect
+- Enhanced card layouts with hover effects
+- Improved form styling and validation feedback
+- Better table design for admin dashboard
+- Custom animations and transitions
+- Mobile-friendly responsive design
+- Custom scrollbar styling
+- Modern modal design
+- Enhanced file upload interface
+- Improved skills tag system
 
 ### Changed
-- Enhanced admin dashboard layout
-- Improved authentication flow
-- Better mobile responsiveness
-- Updated status badges design
-- Refined form layouts and spacing
+- Updated color scheme to modern blue theme
+- Rebranded to "ResumeHub"
+- Improved layout spacing and hierarchy
+- Enhanced visual feedback on interactions
+- Better form validation UI
+- Modernized button styles with gradients
+- Updated footer design
+- Improved mobile navigation
 
 ### Fixed
-- Admin route protection issues
-- File upload validation
-- Authentication redirects
-- Form submission feedback
-- Mobile layout issues
+- Mobile responsiveness issues
+- Form validation feedback visibility
+- Modal styling inconsistencies
+- Table layout on mobile devices
+- Button group alignment on small screens
 
-### Security
-- Protected admin HTML files
-- Enhanced route protection
-- Better authentication flow
-- Improved file upload validation
-
-## [1.0.0] - 2023-12-16
+## [1.0.1] - 2024-01-08
 
 ### Added
-- Initial release of the Resume Management System
-- Public resume submission form with file upload
-- Admin dashboard for managing submissions
-- MongoDB integration for data storage
-- Secure file storage system
-- Admin authentication system with JWT
-- One-time admin registration system
-- File upload validation and sanitization
-- Submission status tracking (pending, reviewed, shortlisted, rejected)
-- Download functionality for submitted resumes
-- Environment-based configuration
-- Security features:
-  - Password hashing
-  - HTTP-only cookies
-  - Protected admin routes
-  - File type restrictions
-  - File size limits
+- Admin authentication system
+- Secure file storage implementation
+- Resume viewing functionality
+- Admin dashboard features
+- MongoDB integration
+- Input validation
+- Error handling
 
-### Security
-- Implemented JWT-based authentication
-- Added secure cookie handling
-- Set up file upload restrictions
-- Created protected admin routes
-- Added environment variable configuration
+### Changed
+- Switched from Firebase to MongoDB
+- Improved server-side architecture
+- Enhanced security measures
+- Updated routing structure
 
-### Technical
-- Built with Node.js and Express
-- MongoDB for database
-- Vanilla JavaScript for frontend
-- Responsive design for all devices
-- File handling with Multer
-- Password hashing with bcrypt
-- JWT for session management
+### Fixed
+- Authentication issues
+- File storage problems
+- Security vulnerabilities
+- Database connection issues
+
+## [1.0.0] - 2024-01-07
+
+### Added
+- Initial release
+- Basic resume submission functionality
+- File upload capability
+- Simple admin interface
+- Basic storage system

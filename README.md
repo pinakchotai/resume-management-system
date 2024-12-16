@@ -82,3 +82,86 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [Express.js](https://expressjs.com/)
 - [MongoDB](https://www.mongodb.com/)
 - [Node.js](https://nodejs.org/) 
+
+## Admin Features
+
+- Secure login system with rate limiting
+- Dashboard with submission statistics
+- View and manage submissions
+- Session management
+- CSRF protection
+- Security headers
+
+## Setup
+
+1. Clone the repository
+2. Install dependencies:
+```bash
+npm install
+```
+3. Copy `.env.example` to `.env` and update the values:
+```bash
+cp .env.example .env
+```
+4. Set up your MongoDB database
+5. Start the server:
+```bash
+npm start
+```
+
+## Environment Variables
+
+Key environment variables:
+
+- `NODE_ENV`: Environment (development/production)
+- `PORT`: Server port
+- `MONGODB_URI`: MongoDB connection string
+- `JWT_SECRET`: Secret for JWT tokens
+- `SESSION_SECRET`: Secret for session management
+- `ADMIN_PASSWORD_HASH`: Bcrypt hash of admin password
+- `ADMIN_EMAIL`: Admin email address
+
+See `.env.example` for all available options.
+
+## Security Features
+
+- JWT-based authentication
+- Session management
+- Rate limiting
+- CSRF protection
+- Security headers
+- Cookie security
+- Input validation
+- File upload restrictions
+
+## API Endpoints
+
+### Public Endpoints
+- `POST /api/submissions`: Submit a resume
+- `GET /`: Home page
+- `GET /api/health`: Health check
+
+### Admin Endpoints
+- `GET /admin/login`: Admin login page
+- `POST /admin/login`: Admin login
+- `GET /admin/dashboard`: Admin dashboard
+- `GET /admin/submissions/:id`: View submission
+- `POST /admin/logout`: Admin logout
+
+## Development
+
+Run in development mode:
+```bash
+npm run dev
+```
+
+## Production
+
+Run in production mode:
+```bash
+npm run prod
+```
+
+## License
+
+See LICENSE file for details.

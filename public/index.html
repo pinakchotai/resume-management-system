@@ -3,92 +3,127 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resume Submission - Resume Management System</title>
+    <title>Submit Resume - Resume Management System</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Custom CSS -->
     <link rel="stylesheet" href="/css/styles.css">
 </head>
-<body>
-    <div class="container">
-        <div class="form-container">
-            <div class="form-header">
-                <h1>Submit Your Resume</h1>
-                <p>Fill in your details and upload your resume to apply</p>
-            </div>
+<body class="bg-light">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-file-alt me-2"></i>
+                Resume Management
+            </a>
+        </div>
+    </nav>
 
-            <form id="resumeForm" enctype="multipart/form-data">
-                <div class="form-group">
-                    <label for="fullName">Full Name *</label>
-                    <input type="text" id="fullName" name="fullName" required 
-                           minlength="2" maxlength="50"
-                           placeholder="Enter your full name">
-                    <div class="validation-message" id="fullNameError"></div>
-                </div>
-
-                <div class="form-group">
-                    <label for="email">Email Address *</label>
-                    <input type="email" id="email" name="email" required
-                           placeholder="Enter your email address">
-                    <div class="validation-message" id="emailError"></div>
-                </div>
-
-                <div class="form-group">
-                    <label for="phone">Phone Number *</label>
-                    <input type="tel" id="phone" name="phone" required
-                           pattern="[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}"
-                           placeholder="Enter your phone number">
-                    <div class="validation-message" id="phoneError"></div>
-                </div>
-
-                <div class="form-group">
-                    <label for="experience">Years of Experience *</label>
-                    <input type="number" id="experience" name="experience" 
-                           required min="0" max="50"
-                           placeholder="Enter years of experience">
-                    <div class="validation-message" id="experienceError"></div>
-                </div>
-
-                <div class="form-group">
-                    <label for="skills">Skills (comma-separated)</label>
-                    <input type="text" id="skills" name="skills" 
-                           placeholder="e.g., JavaScript, Python, React">
-                    <div class="skills-container" id="skillsContainer"></div>
-                </div>
-
-                <div class="form-group">
-                    <label for="currentRole">Current Role</label>
-                    <input type="text" id="currentRole" name="currentRole"
-                           placeholder="Enter your current role">
-                </div>
-
-                <div class="form-group">
-                    <label for="resume">Resume (PDF, DOC, DOCX) *</label>
-                    <div class="file-input-container">
-                        <div class="file-input-button" id="fileInputButton">
-                            Click to select file or drag and drop
-                        </div>
-                        <input type="file" id="resume" name="resume" 
-                               accept=".pdf,.doc,.docx" required
-                               class="file-input">
+    <div class="container my-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">
+                            <i class="fas fa-upload me-2"></i>
+                            Submit Your Resume
+                        </h4>
                     </div>
-                    <div class="file-name" id="fileName"></div>
-                    <div class="validation-message" id="resumeError"></div>
+                    <div class="card-body">
+                        <form id="resumeForm" method="POST" action="/api/submissions" enctype="multipart/form-data">
+                            <div class="row g-3">
+                                <!-- Full Name -->
+                                <div class="col-md-6">
+                                    <label for="fullName" class="form-label">Full Name *</label>
+                                    <input type="text" class="form-control" id="fullName" name="fullName" required 
+                                           minlength="2" maxlength="50">
+                                    <div class="invalid-feedback" id="fullNameError"></div>
+                                </div>
+
+                                <!-- Email -->
+                                <div class="col-md-6">
+                                    <label for="email" class="form-label">Email Address *</label>
+                                    <input type="email" class="form-control" id="email" name="email" required>
+                                    <div class="invalid-feedback" id="emailError"></div>
+                                </div>
+
+                                <!-- Phone -->
+                                <div class="col-md-6">
+                                    <label for="phone" class="form-label">Phone Number *</label>
+                                    <input type="tel" class="form-control" id="phone" name="phone" required
+                                           pattern="[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}">
+                                    <div class="invalid-feedback" id="phoneError"></div>
+                                </div>
+
+                                <!-- Experience -->
+                                <div class="col-md-6">
+                                    <label for="experience" class="form-label">Years of Experience *</label>
+                                    <input type="number" class="form-control" id="experience" name="experience" 
+                                           required min="0" max="50">
+                                    <div class="invalid-feedback" id="experienceError"></div>
+                                </div>
+
+                                <!-- Current Role -->
+                                <div class="col-md-6">
+                                    <label for="currentRole" class="form-label">Current Role</label>
+                                    <input type="text" class="form-control" id="currentRole" name="currentRole">
+                                </div>
+
+                                <!-- Skills -->
+                                <div class="col-md-6">
+                                    <label for="skills" class="form-label">Skills</label>
+                                    <input type="text" class="form-control" id="skills" name="skills" 
+                                           placeholder="Type and press Enter to add">
+                                    <div id="skillsContainer" class="mt-2"></div>
+                                </div>
+
+                                <!-- Resume Upload -->
+                                <div class="col-12">
+                                    <label for="resume" class="form-label">Resume (PDF, DOC, DOCX) *</label>
+                                    <div class="input-group">
+                                        <input type="file" class="form-control" id="resume" name="resume" 
+                                               accept=".pdf,.doc,.docx" required>
+                                    </div>
+                                    <div class="form-text" id="fileName"></div>
+                                    <div class="invalid-feedback" id="resumeError"></div>
+                                </div>
+                            </div>
+
+                            <!-- Messages -->
+                            <div class="alert alert-danger mt-3" id="errorMessage" style="display: none;"></div>
+                            <div class="alert alert-success mt-3" id="successMessage" style="display: none;"></div>
+
+                            <!-- Submit Button -->
+                            <div class="d-grid gap-2 mt-4">
+                                <button type="submit" class="btn btn-primary" id="submitButton">
+                                    <span>Submit Application</span>
+                                    <div class="spinner-border spinner-border-sm ms-2" id="submitSpinner" style="display: none;"></div>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
-
-                <div class="message message-error" id="errorMessage"></div>
-                <div class="message message-success" id="successMessage"></div>
-
-                <button type="submit" class="btn btn-primary" id="submitButton">
-                    <span>Submit Application</span>
-                    <div class="spinner" id="submitSpinner"></div>
-                </button>
-            </form>
+            </div>
         </div>
     </div>
+
+    <!-- Footer -->
+    <footer class="footer mt-auto py-3 bg-dark text-light">
+        <div class="container text-center">
+            <span>© <%= new Date().getFullYear() %> Resume Management System. All rights reserved.</span>
+        </div>
+    </footer>
+
+    <!-- Bootstrap Bundle with Popper -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const form = document.getElementById('resumeForm');
             const fileInput = document.getElementById('resume');
-            const fileInputButton = document.getElementById('fileInputButton');
             const fileName = document.getElementById('fileName');
             const submitButton = document.getElementById('submitButton');
             const submitSpinner = document.getElementById('submitSpinner');
@@ -96,50 +131,6 @@
             const successMessage = document.getElementById('successMessage');
             const skillsInput = document.getElementById('skills');
             const skillsContainer = document.getElementById('skillsContainer');
-
-            // File input handling
-            fileInput.addEventListener('change', function(e) {
-                if (this.files[0]) {
-                    fileName.textContent = this.files[0].name;
-                    fileInputButton.style.borderColor = 'var(--primary-color)';
-                } else {
-                    fileName.textContent = '';
-                    fileInputButton.style.borderColor = 'var(--border-color)';
-                }
-            });
-
-            // Drag and drop handling
-            fileInputButton.addEventListener('dragover', function(e) {
-                e.preventDefault();
-                this.style.borderColor = 'var(--primary-color)';
-                this.style.backgroundColor = 'rgba(76, 175, 80, 0.1)';
-            });
-
-            fileInputButton.addEventListener('dragleave', function(e) {
-                e.preventDefault();
-                this.style.borderColor = 'var(--border-color)';
-                this.style.backgroundColor = 'var(--bg-color)';
-            });
-
-            fileInputButton.addEventListener('drop', function(e) {
-                e.preventDefault();
-                this.style.borderColor = 'var(--border-color)';
-                this.style.backgroundColor = 'var(--bg-color)';
-                
-                const file = e.dataTransfer.files[0];
-                if (file) {
-                    const allowedTypes = ['.pdf', '.doc', '.docx'];
-                    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
-                    
-                    if (allowedTypes.includes(fileExtension)) {
-                        fileInput.files = e.dataTransfer.files;
-                        fileName.textContent = file.name;
-                        fileInputButton.style.borderColor = 'var(--primary-color)';
-                    } else {
-                        showError('Please upload a PDF, DOC, or DOCX file');
-                    }
-                }
-            });
 
             // Skills input handling
             skillsInput.addEventListener('keydown', function(e) {
@@ -154,14 +145,26 @@
             });
 
             function addSkillTag(skill) {
-                const tag = document.createElement('div');
-                tag.className = 'skill-tag';
+                const tag = document.createElement('span');
+                tag.className = 'badge bg-secondary me-2 mb-2';
                 tag.innerHTML = `
                     ${skill}
-                    <button type="button" onclick="this.parentElement.remove()">×</button>
+                    <button type="button" class="btn-close btn-close-white ms-2" 
+                            style="font-size: 0.5em;" onclick="this.parentElement.remove()">
+                    </button>
                 `;
                 skillsContainer.appendChild(tag);
             }
+
+            // File input handling
+            fileInput.addEventListener('change', function() {
+                if (this.files[0]) {
+                    fileName.textContent = this.files[0].name;
+                    fileName.className = 'form-text text-success';
+                } else {
+                    fileName.textContent = '';
+                }
+            });
 
             // Form submission
             form.addEventListener('submit', async (e) => {
@@ -173,17 +176,17 @@
 
                 // Show loading state
                 submitButton.disabled = true;
-                submitSpinner.style.display = 'block';
+                submitSpinner.style.display = 'inline-block';
 
                 // Collect skills
                 const skillTags = Array.from(skillsContainer.children).map(tag => 
-                    tag.textContent.trim().replace('×', '')
+                    tag.textContent.trim()
                 );
 
-                const formData = new FormData(e.target);
-                formData.set('skills', skillTags.join(','));
-
                 try {
+                    const formData = new FormData(form);
+                    formData.set('skills', skillTags.join(','));
+
                     const response = await fetch('/api/submissions', {
                         method: 'POST',
                         body: formData
@@ -199,9 +202,8 @@
                     form.reset();
                     skillsContainer.innerHTML = '';
                     fileName.textContent = '';
-                    fileInputButton.style.borderColor = 'var(--border-color)';
                 } catch (error) {
-                    showError(error.message);
+                    showError(error.message || 'Error submitting form');
                 } finally {
                     submitButton.disabled = false;
                     submitSpinner.style.display = 'none';
@@ -212,13 +214,11 @@
             function showError(message) {
                 errorMessage.textContent = message;
                 errorMessage.style.display = 'block';
-                errorMessage.classList.add('show');
             }
 
             function showSuccess(message) {
                 successMessage.textContent = message;
                 successMessage.style.display = 'block';
-                successMessage.classList.add('show');
             }
 
             // Form validation
@@ -226,17 +226,18 @@
             inputs.forEach(input => {
                 input.addEventListener('invalid', function(e) {
                     e.preventDefault();
+                    this.classList.add('is-invalid');
                     const errorDiv = document.getElementById(`${this.id}Error`);
                     if (errorDiv) {
                         errorDiv.textContent = this.validationMessage;
-                        errorDiv.style.display = 'block';
                     }
                 });
 
                 input.addEventListener('input', function() {
+                    this.classList.remove('is-invalid');
                     const errorDiv = document.getElementById(`${this.id}Error`);
                     if (errorDiv) {
-                        errorDiv.style.display = 'none';
+                        errorDiv.textContent = '';
                     }
                 });
             });

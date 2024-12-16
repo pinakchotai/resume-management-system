@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Submission - Resume Management System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        .header {
+            background-color: #333;
+            color: white;
+            padding: 1rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+        .container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+        .submission-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .field {
+            margin-bottom: 1.5rem;
+        }
+        .field-label {
+            font-weight: bold;
+            color: #666;
+            margin-bottom: 0.5rem;
+        }
+        .field-value {
+            color: #333;
+        }
+        .skills-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .skill-tag {
+            background-color: #e9ecef;
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.9rem;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+        .status-pending { background-color: #ffeeba; color: #856404; }
+        .status-reviewed { background-color: #b8daff; color: #004085; }
+        .status-shortlisted { background-color: #c3e6cb; color: #155724; }
+        .status-rejected { background-color: #f5c6cb; color: #721c24; }
+        .action-buttons {
+            margin-top: 2rem;
+            display: flex;
+            gap: 1rem;
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            text-decoration: none;
+        }
+        .btn-primary {
+            background-color: #007bff;
+            color: white;
+        }
+        .btn-success {
+            background-color: #28a745;
+            color: white;
+        }
+        .btn-danger {
+            background-color: #dc3545;
+            color: white;
+        }
+        .btn:hover {
+            opacity: 0.9;
+        }
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+        select {
+            padding: 0.5rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            background-color: white;
+        }
+        select:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>View Submission</h1>
+        <a href="/admin/dashboard" class="btn btn-primary">Back to Dashboard</a>
+    </header>
+
+    <div class="container">
+        <div class="submission-card">
+            <div class="field">
+                <div class="field-label">Status</div>
+                <div class="field-value">
+                    <span class="status-badge status-<%= submission.status %>">
+                        <%= submission.status.charAt(0).toUpperCase() + submission.status.slice(1) %>
+                    </span>
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">Full Name</div>
+                <div class="field-value"><%= submission.fullName %></div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">Email</div>
+                <div class="field-value"><%= submission.email %></div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">Phone</div>
+                <div class="field-value"><%= submission.phone %></div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">Experience</div>
+                <div class="field-value"><%= submission.experience %> years</div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">Current Role</div>
+                <div class="field-value"><%= submission.currentRole || 'Not specified' %></div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">Skills</div>
+                <div class="field-value">
+                    <div class="skills-list">
+                        <% submission.skills.forEach(function(skill) { %>
+                            <span class="skill-tag"><%= skill %></span>
+                        <% }); %>
+                    </div>
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">Resume</div>
+                <div class="field-value">
+                    <div class="button-group">
+                        <a href="/admin/submissions/<%= submission._id %>/view" target="_blank" class="btn btn-primary">
+                            View Resume
+                        </a>
+                        <a href="/admin/submissions/<%= submission._id %>/download" class="btn btn-success">
+                            Download Resume
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="field">
+                <div class="field-label">Submitted On</div>
+                <div class="field-value"><%= new Date(submission.createdAt).toLocaleString() %></div>
+            </div>
+
+            <div class="action-buttons">
+                <form action="/admin/submissions/<%= submission._id %>/status" method="POST" style="display: inline;">
+                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                    <select name="status" onchange="this.form.submit()">
+                        <option value="pending" <%= submission.status === 'pending' ? 'selected' : '' %>>Pending</option>
+                        <option value="reviewed" <%= submission.status === 'reviewed' ? 'selected' : '' %>>Reviewed</option>
+                        <option value="shortlisted" <%= submission.status === 'shortlisted' ? 'selected' : '' %>>Shortlisted</option>
+                        <option value="rejected" <%= submission.status === 'rejected' ? 'selected' : '' %>>Rejected</option>
+                    </select>
+                </form>
+            </div>
+        </div>
+    </div>
+</body>
+</html> 

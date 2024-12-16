@@ -14,20 +14,21 @@ import express from 'express';
 import multer from 'multer';
 import fs from 'fs/promises';
 import path from 'path';
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
-import crypto from 'crypto';
 import helmet from 'helmet';
 import compression from 'compression';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
+import session from 'express-session';
+import MongoStore from 'connect-mongo';
 import connectDB from './config/db.js';
 import Logger from './config/logger.js';
 import Submission from './models/submission.js';
+import adminRouter from './routes/admin.js';
+import { authMiddleware } from './middleware/authMiddleware.js';
 
 // Load Environment Variables
 dotenv.config();
@@ -41,37 +42,73 @@ const isProduction = process.env.NODE_ENV === 'production';
 // Initialize Express App
 const app = express();
 
+// Set up EJS as the template engine
+app.set('view engine', 'ejs');
+app.set('views', path.join(__dirname, 'views'));
+
+/**
+ * Basic Middleware Configuration
+ */
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+
+// Session Configuration
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({
+        mongoUrl: process.env.MONGODB_URI,
+        ttl: 24 * 60 * 60 // 1 day
+    }),
+    cookie: {
+        secure: isProduction,
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000 // 1 day
+    }
+}));
+
 /**
  * Security Middleware Configuration
  */
-app.use(helmet()); // Add security headers
-app.use(compression()); // Compress responses
-app.use(morgan(isProduction ? 'combined' : 'dev')); // HTTP request logging
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            imgSrc: ["'self'", "data:", "https:"],
+        },
+    }
+}));
+app.use(compression());
+app.use(morgan(isProduction ? 'combined' : 'dev'));
 
 // Rate limiting
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: isProduction ? 100 : 1000 // limit each IP
+    windowMs: 15 * 60 * 1000,
+    max: isProduction ? 100 : 1000
 });
 app.use('/api/', limiter);
 
 // CORS configuration
 const corsOptions = {
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || 'http://localhost:3000',
+    origin: process.env.ALLOWED_ORIGINS?.split(',') || 'http://localhost:3001',
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
 };
 app.use(cors(corsOptions));
 
-/**
- * Basic Middleware Configuration
- */
-app.use(express.json());
-app.use(cookieParser());
-
-// Serve static files with cache control
+// Serve static files
 app.use(express.static('public', {
+    maxAge: isProduction ? '1d' : 0,
+    etag: true
+}));
+
+// Serve uploaded files (with authentication)
+app.use('/uploads', authMiddleware.requireAuth, express.static('uploads', {
     maxAge: isProduction ? '1d' : 0,
     etag: true
 }));
@@ -79,168 +116,13 @@ app.use(express.static('public', {
 // Initialize MongoDB connection
 connectDB();
 
-// Check if admin exists
-let adminConfigured = false;
-
-// Admin Authentication Middleware
-const authenticateAdmin = async (req, res, next) => {
-    try {
-        const token = req.cookies.adminToken;
-        if (!token) {
-            if (req.headers.accept && req.headers.accept.includes('application/json')) {
-                return res.status(401).json({ error: 'Authentication required' });
-            }
-            return res.redirect('/admin-login');
-        }
-
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
-        if (decoded.email !== process.env.ADMIN_EMAIL) {
-            if (req.headers.accept && req.headers.accept.includes('application/json')) {
-                return res.status(403).json({ error: 'Not authorized' });
-            }
-            return res.redirect('/admin-login');
-        }
-
-        next();
-    } catch (error) {
-        if (req.headers.accept && req.headers.accept.includes('application/json')) {
-            return res.status(401).json({ error: 'Invalid token' });
-        }
-        res.redirect('/admin-login');
-    }
-};
-
-// Admin Registration Routes
-app.get('/admin-register', async (req, res) => {
-    const isConfigured = await checkAdminConfig();
-    if (!isConfigured) {
-        return res.sendFile(path.join(__dirname, 'public', 'admin-register.html'));
-    }
-    res.redirect('/admin-login');
-});
-
-app.get('/admin-login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin-login.html'));
-});
-
-app.get('/admin', authenticateAdmin, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
-});
-
-// Admin API Routes
-app.post('/api/admin/register', async (req, res) => {
-    try {
-        const isConfigured = await checkAdminConfig();
-        if (isConfigured) {
-            return res.status(403).json({ error: 'Admin already configured' });
-        }
-
-        const { email, password } = req.body;
-
-        // Validate email and password
-        if (!email || !password) {
-            return res.status(400).json({ error: 'Email and password are required' });
-        }
-
-        if (password.length < 8) {
-            return res.status(400).json({ error: 'Password must be at least 8 characters long' });
-        }
-
-        // Hash password
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
-
-        // Generate secure tokens
-        const jwtSecret = crypto.randomBytes(32).toString('hex');
-        const cookieSecret = crypto.randomBytes(32).toString('hex');
-
-        // Create .env file content
-        const envContent = `# Security
-JWT_SECRET=${jwtSecret}
-ADMIN_PASSWORD_HASH=${hashedPassword}
-ADMIN_EMAIL=${email}
-
-# Environment
-NODE_ENV=development
-PORT=3001
-
-# Database
-MONGODB_URI=mongodb://localhost:27017/resume-management
-
-# Cookie Settings
-COOKIE_SECRET=${cookieSecret}
-COOKIE_SECURE=true
-COOKIE_HTTP_ONLY=true
-
-# File Upload
-MAX_FILE_SIZE=2097152 # 2MB in bytes
-ALLOWED_FILE_TYPES=application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document`;
-
-        // Write to .env file
-        await fs.writeFile('.env', envContent, { encoding: 'utf8', flag: 'w' });
-
-        // Set admin as configured
-        adminConfigured = true;
-        process.env.ADMIN_EMAIL = email;
-        process.env.ADMIN_PASSWORD_HASH = hashedPassword;
-        process.env.JWT_SECRET = jwtSecret;
-
-        res.status(201).json({ 
-            message: 'Admin configured successfully',
-            note: 'Please restart the server to apply changes'
-        });
-    } catch (error) {
-        console.error('Registration error:', error);
-        res.status(500).json({ 
-            error: 'Error during registration',
-            details: error.message
-        });
-    }
-});
-
-app.post('/api/admin/login', async (req, res) => {
-    try {
-        const { email, password } = req.body;
-        
-        if (email !== process.env.ADMIN_EMAIL) {
-            return res.status(401).json({ error: 'Invalid credentials' });
-        }
-
-        const isValidPassword = await bcrypt.compare(password, process.env.ADMIN_PASSWORD_HASH);
-        if (!isValidPassword) {
-            return res.status(401).json({ error: 'Invalid credentials' });
-        }
-
-        const token = jwt.sign(
-            { email: process.env.ADMIN_EMAIL },
-            process.env.JWT_SECRET,
-            { expiresIn: '24h' }
-        );
-
-        res.cookie('adminToken', token, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: 24 * 60 * 60 * 1000 // 24 hours
-        });
-
-        res.json({ message: 'Logged in successfully' });
-    } catch (error) {
-        console.error('Login error:', error);
-        res.status(500).json({ error: 'Error during login' });
-    }
-});
-
-app.post('/api/admin/logout', (req, res) => {
-    res.clearCookie('adminToken');
-    res.json({ message: 'Logged out successfully' });
-});
+/**
+ * Mount Admin Routes
+ */
+app.use('/admin', adminRouter);
 
 /**
  * File Upload Configuration
- * - Configures storage location and filename
- * - Sets file size limits
- * - Validates file types
  */
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
@@ -273,10 +155,10 @@ const upload = multer({
 
 // Root endpoint - Server status check
 app.get('/', (req, res) => {
-    res.json({ message: 'Server is running' });
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// Health check endpoint - Detailed server status
+// Health check endpoint
 app.get('/api/health', (req, res) => {
     res.json({ 
         status: 'ok', 
@@ -323,7 +205,7 @@ app.post('/api/submissions', upload.single('resume'), async (req, res) => {
             try {
                 await fs.unlink(req.file.path);
             } catch (unlinkError) {
-                console.error('Error deleting file:', unlinkError);
+                Logger.error('Error deleting file:', unlinkError);
             }
         }
 
@@ -343,54 +225,8 @@ app.post('/api/submissions', upload.single('resume'), async (req, res) => {
             });
         }
 
-        console.error('Submission error:', error);
+        Logger.error('Submission error:', error);
         res.status(500).json({ error: 'Error processing submission' });
-    }
-});
-
-// Get all submissions
-app.get('/api/submissions', authenticateAdmin, async (req, res) => {
-    try {
-        const submissions = await Submission.find()
-            .sort({ createdAt: -1 })
-            .select('-resumePath');
-
-        res.json(submissions);
-    } catch (error) {
-        console.error('Error fetching submissions:', error);
-        res.status(500).json({ error: 'Error fetching submissions' });
-    }
-});
-
-// Get a single submission
-app.get('/api/submissions/:id', authenticateAdmin, async (req, res) => {
-    try {
-        const submission = await Submission.findById(req.params.id);
-        
-        if (!submission) {
-            return res.status(404).json({ error: 'Submission not found' });
-        }
-
-        res.json(submission);
-    } catch (error) {
-        console.error('Error fetching submission:', error);
-        res.status(500).json({ error: 'Error fetching submission' });
-    }
-});
-
-// Download resume
-app.get('/api/submissions/:id/resume', authenticateAdmin, async (req, res) => {
-    try {
-        const submission = await Submission.findById(req.params.id);
-        
-        if (!submission) {
-            return res.status(404).json({ error: 'Submission not found' });
-        }
-
-        res.download(submission.resumePath, submission.fileName);
-    } catch (error) {
-        console.error('Error downloading resume:', error);
-        res.status(500).json({ error: 'Error downloading resume' });
     }
 });
 
@@ -403,9 +239,9 @@ async function initializeStorage() {
     try {
         const uploadDir = path.join(__dirname, 'uploads');
         await fs.mkdir(uploadDir, { recursive: true });
-        console.log(`Storage initialized at ${uploadDir}`);
+        Logger.info(`Storage initialized at ${uploadDir}`);
     } catch (error) {
-        console.error('Error initializing storage:', error);
+        Logger.error('Error initializing storage:', error);
         throw error;
     }
 }
