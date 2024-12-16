@@ -134,6 +134,6 @@ document.addEventListener('alpine:init', () => {
                 console.error('Download error:', error);
                 alert('Error downloading resume: ' + error.message);
             }
-        }
+        },
     }));
 });

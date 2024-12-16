@@ -3,36 +3,204 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Resume Management System</title>
-    <link rel="stylesheet" href="css/styles.css">
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <title>Admin Dashboard - Resume Management System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .submissions-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .submissions-table th,
+        .submissions-table td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        .submissions-table th {
+            background-color: #f4f4f4;
+        }
+        .submissions-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .submissions-table tr:hover {
+            background-color: #f5f5f5;
+        }
+        .status-pending {
+            color: #f39c12;
+        }
+        .status-reviewed {
+            color: #3498db;
+        }
+        .status-shortlisted {
+            color: #27ae60;
+        }
+        .status-rejected {
+            color: #e74c3c;
+        }
+        .action-btn {
+            padding: 5px 10px;
+            margin: 0 5px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .view-btn {
+            background-color: #3498db;
+            color: white;
+        }
+        .download-btn {
+            background-color: #27ae60;
+            color: white;
+        }
+        .status-select {
+            padding: 5px;
+            border-radius: 3px;
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+        }
+        .error {
+            color: red;
+            padding: 10px;
+            background-color: #ffebee;
+            border-radius: 4px;
+            margin: 10px 0;
+            display: none;
+        }
+    </style>
 </head>
 <body>
-    <div class="container" x-data="formHandler">
-        <header>
-            <h1>Resume Management Dashboard</h1>
-        </header>
-
-        <main>
-            <div class="submissions-list">
-                <h2>Submitted Resumes</h2>
-                <template x-if="submissions.length === 0">
-                    <p>No submissions yet.</p>
-                </template>
-                <template x-for="submission in submissions" :key="submission.id">
-                    <div class="submission-card">
-                        <h3 x-text="submission.fullName"></h3>
-                        <p>Email: <span x-text="submission.email"></span></p>
-                        <p>Phone: <span x-text="submission.phone"></span></p>
-                        <p>Experience: <span x-text="submission.experience"></span> years</p>
-                        <p>Submitted: <span x-text="new Date(submission.submittedAt).toLocaleString()"></span></p>
-                        <button @click="downloadResume(submission.id)">Download Resume</button>
-                    </div>
-                </template>
-            </div>
-        </main>
+    <div class="header">
+        <h1>Resume Management Dashboard</h1>
+        <div>
+            <span id="totalSubmissions">Total Submissions: 0</span>
+        </div>
     </div>
 
-    <script src="js/app.js"></script>
+    <div id="errorMessage" class="error"></div>
+
+    <table class="submissions-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Experience</th>
+                <th>Current Role</th>
+                <th>Status</th>
+                <th>Submitted Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="submissionsTableBody">
+            <tr>
+                <td colspan="8" class="loading">Loading submissions...</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script>
+        // Fetch and display submissions
+        async function fetchSubmissions() {
+            try {
+                const response = await fetch('/api/submissions');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch submissions');
+                }
+                
+                const submissions = await response.json();
+                displaySubmissions(submissions);
+                document.getElementById('totalSubmissions').textContent = `Total Submissions: ${submissions.length}`;
+            } catch (error) {
+                const errorMessage = document.getElementById('errorMessage');
+                errorMessage.textContent = error.message;
+                errorMessage.style.display = 'block';
+            }
+        }
+
+        // Display submissions in table
+        function displaySubmissions(submissions) {
+            const tableBody = document.getElementById('submissionsTableBody');
+            tableBody.innerHTML = '';
+
+            submissions.forEach(submission => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${submission.fullName}</td>
+                    <td>${submission.email}</td>
+                    <td>${submission.phone}</td>
+                    <td>${submission.experience} years</td>
+                    <td>${submission.currentRole || '-'}</td>
+                    <td>
+                        <select class="status-select" onchange="updateStatus('${submission._id}', this.value)">
+                            <option value="pending" ${submission.status === 'pending' ? 'selected' : ''}>Pending</option>
+                            <option value="reviewed" ${submission.status === 'reviewed' ? 'selected' : ''}>Reviewed</option>
+                            <option value="shortlisted" ${submission.status === 'shortlisted' ? 'selected' : ''}>Shortlisted</option>
+                            <option value="rejected" ${submission.status === 'rejected' ? 'selected' : ''}>Rejected</option>
+                        </select>
+                    </td>
+                    <td>${new Date(submission.createdAt).toLocaleDateString()}</td>
+                    <td>
+                        <button class="action-btn view-btn" onclick="viewSubmission('${submission._id}')">View</button>
+                        <button class="action-btn download-btn" onclick="downloadResume('${submission._id}')">Download Resume</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        }
+
+        // Update submission status
+        async function updateStatus(id, status) {
+            try {
+                const response = await fetch(`/api/submissions/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to update status');
+                }
+
+                // Refresh submissions after update
+                fetchSubmissions();
+            } catch (error) {
+                const errorMessage = document.getElementById('errorMessage');
+                errorMessage.textContent = error.message;
+                errorMessage.style.display = 'block';
+            }
+        }
+
+        // View submission details
+        function viewSubmission(id) {
+            window.location.href = `/admin/submission/${id}`;
+        }
+
+        // Download resume
+        function downloadResume(id) {
+            window.location.href = `/api/submissions/${id}/resume`;
+        }
+
+        // Initial load
+        fetchSubmissions();
+
+        // Refresh submissions every 30 seconds
+        setInterval(fetchSubmissions, 30000);
+    </script>
 </body>
 </html>
