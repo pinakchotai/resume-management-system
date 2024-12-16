@@ -8,7 +8,8 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/resume-management';
+// Railway provides DATABASE_URL environment variable
+const MONGODB_URI = process.env.DATABASE_URL || process.env.MONGODB_URI || 'mongodb://localhost:27017/resume-management';
 
 /**
  * MongoDB Connection Options
@@ -17,9 +18,7 @@ const options = {
     useNewUrlParser: true,
     useUnifiedTopology: true,
     retryWrites: true,
-    w: 'majority',
-    serverSelectionTimeoutMS: 5000,
-    socketTimeoutMS: 45000,
+    w: 'majority'
 };
 
 /**
@@ -28,13 +27,6 @@ const options = {
  */
 const connectDB = async () => {
     try {
-        // Log the connection string (without credentials)
-        const sanitizedUri = MONGODB_URI.replace(
-            /mongodb(\+srv)?:\/\/[^:]+:[^@]+@/,
-            'mongodb$1://****:****@'
-        );
-        console.log('Attempting to connect to MongoDB:', sanitizedUri);
-
         const conn = await mongoose.connect(MONGODB_URI, options);
         console.log('=================================');
         console.log('MongoDB Connection Established');
@@ -42,46 +34,9 @@ const connectDB = async () => {
         console.log(`Database: ${conn.connection.name}`);
         console.log('=================================');
 
-        // Handle connection events
-        mongoose.connection.on('error', err => {
-            console.error('MongoDB connection error:', err);
-            if (err.name === 'MongoServerError' && err.code === 8000) {
-                console.error('Authentication failed. Please check:');
-                console.error('1. Username is correct');
-                console.error('2. Password is correct');
-                console.error('3. User has correct permissions');
-                console.error('4. Database name is correct');
-            }
-        });
-
-        mongoose.connection.on('disconnected', () => {
-            console.warn('MongoDB disconnected. Attempting to reconnect...');
-        });
-
-        mongoose.connection.on('reconnected', () => {
-            console.log('MongoDB reconnected');
-        });
-
         return conn;
     } catch (error) {
         console.error('MongoDB connection error:', error);
-        
-        // Enhanced error logging
-        if (error.name === 'MongoServerError' && error.code === 8000) {
-            console.error('Authentication failed. Please check:');
-            console.error('1. Username is correct');
-            console.error('2. Password is correct');
-            console.error('3. User has correct permissions');
-            console.error('4. Database name is correct');
-        } else if (error.name === 'MongoServerSelectionError') {
-            console.error('Could not connect to any MongoDB server.');
-            console.error('Please check if:');
-            console.error('1. The connection string is correct');
-            console.error('2. The MongoDB server is running');
-            console.error('3. Network connectivity is available');
-            console.error('4. IP whitelist settings in MongoDB Atlas');
-        }
-        
         process.exit(1);
     }
 };
