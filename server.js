@@ -20,7 +20,13 @@ import cookieParser from 'cookie-parser';
 import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
+import helmet from 'helmet';
+import compression from 'compression';
+import cors from 'cors';
+import rateLimit from 'express-rate-limit';
+import morgan from 'morgan';
 import connectDB from './config/db.js';
+import Logger from './config/logger.js';
 import Submission from './models/submission.js';
 
 // Load Environment Variables
@@ -36,35 +42,39 @@ const isProduction = process.env.NODE_ENV === 'production';
 const app = express();
 
 /**
- * Middleware Configuration
- * - express.json() for parsing JSON payloads
- * - cookieParser for handling cookies
- * - express.static for serving static files
+ * Security Middleware Configuration
+ */
+app.use(helmet()); // Add security headers
+app.use(compression()); // Compress responses
+app.use(morgan(isProduction ? 'combined' : 'dev')); // HTTP request logging
+
+// Rate limiting
+const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: isProduction ? 100 : 1000 // limit each IP
+});
+app.use('/api/', limiter);
+
+// CORS configuration
+const corsOptions = {
+    origin: process.env.ALLOWED_ORIGINS?.split(',') || 'http://localhost:3000',
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization']
+};
+app.use(cors(corsOptions));
+
+/**
+ * Basic Middleware Configuration
  */
 app.use(express.json());
 app.use(cookieParser());
 
-// CORS for production
-if (isProduction) {
-    app.use((req, res, next) => {
-        const allowedOrigins = [process.env.VERCEL_URL, 'https://resume-management-system.vercel.app']; // Add your domain
-        const origin = req.headers.origin;
-        
-        if (allowedOrigins.includes(origin)) {
-            res.setHeader('Access-Control-Allow-Origin', origin);
-        }
-        
-        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-        res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-        res.setHeader('Access-Control-Allow-Credentials', 'true');
-        
-        if (req.method === 'OPTIONS') {
-            return res.status(200).end();
-        }
-        
-        next();
-    });
-}
+// Serve static files with cache control
+app.use(express.static('public', {
+    maxAge: isProduction ? '1d' : 0,
+    etag: true
+}));
 
 // Initialize MongoDB connection
 connectDB();
@@ -77,11 +87,9 @@ const authenticateAdmin = async (req, res, next) => {
     try {
         const token = req.cookies.adminToken;
         if (!token) {
-            // Check if the request expects JSON
             if (req.headers.accept && req.headers.accept.includes('application/json')) {
                 return res.status(401).json({ error: 'Authentication required' });
             }
-            // For regular requests, redirect to login
             return res.redirect('/admin-login');
         }
 
@@ -101,31 +109,6 @@ const authenticateAdmin = async (req, res, next) => {
         res.redirect('/admin-login');
     }
 };
-
-// Check if admin is configured
-const checkAdminConfig = async () => {
-    try {
-        const envFile = await fs.readFile('.env', 'utf8');
-        const hasEmail = envFile.includes('ADMIN_EMAIL=') && !envFile.includes('ADMIN_EMAIL=\n');
-        const hasHash = envFile.includes('ADMIN_PASSWORD_HASH=') && !envFile.includes('ADMIN_PASSWORD_HASH=\n');
-        adminConfigured = hasEmail && hasHash;
-        return adminConfigured;
-    } catch (error) {
-        // If .env file doesn't exist or can't be read, admin is not configured
-        adminConfigured = false;
-        return false;
-    }
-};
-
-// Serve static files for public routes
-app.use(express.static('public', {
-    index: 'index.html',
-    setHeaders: (res, path) => {
-        if (path.endsWith('admin.html') || path.endsWith('admin-login.html') || path.endsWith('admin-register.html')) {
-            res.status(403).end('Forbidden');
-        }
-    }
-}));
 
 // Admin Registration Routes
 app.get('/admin-register', async (req, res) => {
@@ -437,17 +420,24 @@ async function startServer() {
         await connectDB();
         
         // Start Express server
-        app.listen(port, '0.0.0.0', () => {
-            console.log('=================================');
-            console.log('Resume Management System Server');
-            console.log('=================================');
-            console.log(`Environment: ${process.env.NODE_ENV}`);
-            console.log(`Server running at http://localhost:${port}`);
-            console.log('Press Ctrl+C to stop the server');
-            console.log('=================================');
+        const server = app.listen(port, () => {
+            Logger.info('=================================');
+            Logger.info('Resume Management System Server');
+            Logger.info('=================================');
+            Logger.info(`Environment: ${process.env.NODE_ENV}`);
+            Logger.info(`Server running at http://localhost:${port}`);
+            Logger.info('Press Ctrl+C to stop the server');
+            Logger.info('=================================');
         });
+
+        // Handle server errors
+        server.on('error', (error) => {
+            Logger.error('Server error:', error);
+            process.exit(1);
+        });
+
     } catch (error) {
-        console.error('Failed to start server:', error);
+        Logger.error('Failed to start server:', error);
         process.exit(1);
     }
 }
@@ -458,23 +448,32 @@ async function startServer() {
 
 // Global error handler middleware
 app.use((err, req, res, next) => {
-    console.error('Unhandled Error:', err);
+    Logger.error('Unhandled Error:', err);
     res.status(500).json({ 
         error: 'Internal Server Error',
-        message: process.env.NODE_ENV === 'development' ? err.message : undefined
+        message: !isProduction ? err.message : undefined
     });
 });
 
 // Handle uncaught exceptions
 process.on('uncaughtException', (error) => {
-    console.error('Uncaught Exception:', error);
+    Logger.error('Uncaught Exception:', error);
     process.exit(1);
 });
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (error) => {
-    console.error('Unhandled Rejection:', error);
+    Logger.error('Unhandled Rejection:', error);
     process.exit(1);
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+    Logger.info('SIGTERM received. Performing graceful shutdown...');
+    app.close(() => {
+        Logger.info('Server closed. Exiting process.');
+        process.exit(0);
+    });
 });
 
 // Start the server
