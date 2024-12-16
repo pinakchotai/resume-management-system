@@ -28,6 +28,13 @@ const options = {
  */
 const connectDB = async () => {
     try {
+        // Log the connection string (without credentials)
+        const sanitizedUri = MONGODB_URI.replace(
+            /mongodb(\+srv)?:\/\/[^:]+:[^@]+@/,
+            'mongodb$1://****:****@'
+        );
+        console.log('Attempting to connect to MongoDB:', sanitizedUri);
+
         const conn = await mongoose.connect(MONGODB_URI, options);
         console.log('=================================');
         console.log('MongoDB Connection Established');
@@ -38,6 +45,13 @@ const connectDB = async () => {
         // Handle connection events
         mongoose.connection.on('error', err => {
             console.error('MongoDB connection error:', err);
+            if (err.name === 'MongoServerError' && err.code === 8000) {
+                console.error('Authentication failed. Please check:');
+                console.error('1. Username is correct');
+                console.error('2. Password is correct');
+                console.error('3. User has correct permissions');
+                console.error('4. Database name is correct');
+            }
         });
 
         mongoose.connection.on('disconnected', () => {
@@ -51,8 +65,15 @@ const connectDB = async () => {
         return conn;
     } catch (error) {
         console.error('MongoDB connection error:', error);
-        // Log more details about the error
-        if (error.name === 'MongoServerSelectionError') {
+        
+        // Enhanced error logging
+        if (error.name === 'MongoServerError' && error.code === 8000) {
+            console.error('Authentication failed. Please check:');
+            console.error('1. Username is correct');
+            console.error('2. Password is correct');
+            console.error('3. User has correct permissions');
+            console.error('4. Database name is correct');
+        } else if (error.name === 'MongoServerSelectionError') {
             console.error('Could not connect to any MongoDB server.');
             console.error('Please check if:');
             console.error('1. The connection string is correct');
@@ -60,6 +81,7 @@ const connectDB = async () => {
             console.error('3. Network connectivity is available');
             console.error('4. IP whitelist settings in MongoDB Atlas');
         }
+        
         process.exit(1);
     }
 };
