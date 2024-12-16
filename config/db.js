@@ -16,6 +16,10 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/resume
 const options = {
     useNewUrlParser: true,
     useUnifiedTopology: true,
+    retryWrites: true,
+    w: 'majority',
+    serverSelectionTimeoutMS: 5000,
+    socketTimeoutMS: 45000,
 };
 
 /**
@@ -47,6 +51,15 @@ const connectDB = async () => {
         return conn;
     } catch (error) {
         console.error('MongoDB connection error:', error);
+        // Log more details about the error
+        if (error.name === 'MongoServerSelectionError') {
+            console.error('Could not connect to any MongoDB server.');
+            console.error('Please check if:');
+            console.error('1. The connection string is correct');
+            console.error('2. The MongoDB server is running');
+            console.error('3. Network connectivity is available');
+            console.error('4. IP whitelist settings in MongoDB Atlas');
+        }
         process.exit(1);
     }
 };
