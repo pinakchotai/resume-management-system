@@ -1,4 +1,16 @@
-/* Reset and base styles */
+/* Global Styles */
+:root {
+    --primary-color: #4CAF50;
+    --primary-dark: #45a049;
+    --error-color: #e74c3c;
+    --success-color: #2ecc71;
+    --warning-color: #f1c40f;
+    --text-color: #333;
+    --border-color: #ddd;
+    --bg-color: #f5f5f5;
+    --white: #ffffff;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -6,206 +18,236 @@
 }
 
 body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     line-height: 1.6;
-    color: #333;
-    background-color: #f5f5f5;
+    color: var(--text-color);
+    background-color: var(--bg-color);
 }
 
 .container {
     max-width: 800px;
-    margin: 0 auto;
-    padding: 2rem;
+    margin: 2rem auto;
+    padding: 0 1rem;
 }
 
-/* Header styles */
-header {
-    text-align: center;
-    margin-bottom: 3rem;
-}
-
-header h1 {
-    font-size: 2.5rem;
-    color: #2c3e50;
-    margin-bottom: 1rem;
-}
-
-/* Form styles */
-.submission-form {
-    background: white;
+/* Form Styles */
+.form-container {
+    background: var(--white);
     padding: 2rem;
     border-radius: 10px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.form-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.form-header h1 {
+    color: var(--text-color);
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.form-header p {
+    color: #666;
+    font-size: 1rem;
 }
 
 .form-group {
     margin-bottom: 1.5rem;
 }
 
-label {
+.form-group label {
     display: block;
     margin-bottom: 0.5rem;
+    color: var(--text-color);
     font-weight: 500;
-    color: #2c3e50;
 }
 
-input[type="text"],
-input[type="email"],
-input[type="tel"],
-input[type="number"] {
+.form-group input,
+.form-group textarea {
     width: 100%;
     padding: 0.75rem;
-    border: 2px solid #e2e8f0;
-    border-radius: 6px;
+    border: 1px solid var(--border-color);
+    border-radius: 5px;
     font-size: 1rem;
     transition: border-color 0.3s ease;
 }
 
-input[type="file"] {
-    width: 100%;
-    padding: 0.5rem;
-    border: 2px dashed #e2e8f0;
-    border-radius: 6px;
-    cursor: pointer;
-}
-
-input:focus {
+.form-group input:focus,
+.form-group textarea:focus {
     outline: none;
-    border-color: #4299e1;
+    border-color: var(--primary-color);
+    box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.1);
 }
 
-/* Button styles */
-.submit-btn {
-    width: 100%;
-    padding: 1rem;
-    background-color: #4299e1;
-    color: white;
-    border: none;
-    border-radius: 6px;
-    font-size: 1rem;
-    font-weight: 600;
+.file-input-container {
+    position: relative;
+    margin-top: 0.5rem;
+}
+
+.file-input-button {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    background-color: var(--bg-color);
+    border: 2px dashed var(--border-color);
+    border-radius: 5px;
     cursor: pointer;
-    transition: background-color 0.3s ease;
+    width: 100%;
+    text-align: center;
+    transition: all 0.3s ease;
 }
 
-.submit-btn:hover {
-    background-color: #3182ce;
+.file-input-button:hover {
+    border-color: var(--primary-color);
+    background-color: rgba(76, 175, 80, 0.1);
 }
 
-.submit-btn:disabled {
-    background-color: #a0aec0;
+.file-input {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.file-name {
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+/* Button Styles */
+.btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 500;
+    text-align: center;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    width: 100%;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    color: var(--white);
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-dark);
+}
+
+.btn-primary:disabled {
+    background-color: #ccc;
     cursor: not-allowed;
 }
 
-/* Message styles */
-.error-message,
-.success-message {
+/* Message Styles */
+.message {
     padding: 1rem;
-    border-radius: 6px;
-    margin-bottom: 1rem;
-    font-weight: 500;
+    border-radius: 5px;
+    margin: 1rem 0;
+    display: none;
 }
 
-.error-message {
-    background-color: #fed7d7;
-    color: #c53030;
-    border: 1px solid #feb2b2;
+.message-error {
+    background-color: #fdecea;
+    color: var(--error-color);
+    border: 1px solid #fbd7d5;
 }
 
-.success-message {
-    background-color: #c6f6d5;
-    color: #2f855a;
-    border: 1px solid #9ae6b4;
+.message-success {
+    background-color: #edfbf0;
+    color: var(--success-color);
+    border: 1px solid #d4f5dc;
 }
 
-/* Admin panel styles */
-.submissions-list {
-    margin-top: 2rem;
+/* Loading Spinner */
+.spinner {
+    display: none;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid var(--primary-color);
+    border-radius: 50%;
+    margin: 0 auto;
+    animation: spin 1s linear infinite;
 }
 
-.submission-card {
-    background: white;
-    padding: 1.5rem;
-    border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    margin-bottom: 1rem;
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
 }
 
-.submission-card h3 {
-    color: #2c3e50;
-    margin-bottom: 0.5rem;
-}
-
-.submission-card p {
-    margin-bottom: 0.5rem;
-    color: #4a5568;
-}
-
-.submission-card button {
-    padding: 0.5rem 1rem;
-    background-color: #4299e1;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.875rem;
-    transition: background-color 0.3s ease;
-}
-
-.submission-card button:hover {
-    background-color: #3182ce;
-}
-
-/* Footer styles */
-footer {
-    text-align: center;
-    margin-top: 3rem;
-    padding-top: 2rem;
-    border-top: 1px solid #e2e8f0;
-    color: #718096;
-}
-
-/* Responsive design */
+/* Responsive Design */
 @media (max-width: 768px) {
     .container {
-        padding: 1rem;
+        margin: 1rem auto;
     }
 
-    header h1 {
-        font-size: 2rem;
-    }
-
-    .submission-form {
+    .form-container {
         padding: 1.5rem;
     }
+
+    .form-header h1 {
+        font-size: 1.75rem;
+    }
 }
 
-/* Loading state animation */
-@keyframes pulse {
-    0% { opacity: 1; }
-    50% { opacity: 0.5; }
-    100% { opacity: 1; }
+/* Skills Input */
+.skills-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
 }
 
-.submit-btn:disabled span {
-    animation: pulse 1.5s infinite;
-/* Add these to your existing styles */
-.alert {
-    padding: 1rem;
-    margin: 1rem 0;
-    border-radius: 6px;
-    text-align: center;
+.skill-tag {
+    background-color: rgba(76, 175, 80, 0.1);
+    color: var(--primary-color);
+    padding: 0.25rem 0.75rem;
+    border-radius: 15px;
+    font-size: 0.9rem;
+    display: flex;
+    align-items: center;
 }
 
-.alert-error {
-    background-color: #fed7d7;
-    color: #c53030;
-    border: 1px solid #feb2b2;
+.skill-tag button {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    margin-left: 0.5rem;
+    cursor: pointer;
+    font-size: 1.1rem;
+    line-height: 1;
 }
 
-.alert-success {
-    background-color: #c6f6d5;
-    color: #2f855a;
-    border: 1px solid #9ae6b4;
+/* Form Validation */
+.form-group input:invalid,
+.form-group textarea:invalid {
+    border-color: var(--error-color);
 }
+
+.validation-message {
+    color: var(--error-color);
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+    display: none;
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.message.show {
+    display: block;
+    animation: fadeIn 0.3s ease-out;
 }

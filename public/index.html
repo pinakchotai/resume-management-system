@@ -3,128 +3,243 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resume Management System</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .form-group {
-            margin-bottom: 15px;
-        }
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-        }
-        input[type="text"],
-        input[type="email"],
-        input[type="number"],
-        input[type="tel"] {
-            width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            box-sizing: border-box;
-        }
-        button {
-            background-color: #4CAF50;
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #45a049;
-        }
-        .error {
-            color: red;
-            margin-top: 5px;
-            display: none;
-        }
-        .success {
-            color: green;
-            margin-top: 5px;
-            display: none;
-        }
-    </style>
+    <title>Resume Submission - Resume Management System</title>
+    <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
-    <h1>Submit Your Resume</h1>
-    <form id="resumeForm" enctype="multipart/form-data">
-        <div class="form-group">
-            <label for="fullName">Full Name *</label>
-            <input type="text" id="fullName" name="fullName" required>
-        </div>
+    <div class="container">
+        <div class="form-container">
+            <div class="form-header">
+                <h1>Submit Your Resume</h1>
+                <p>Fill in your details and upload your resume to apply</p>
+            </div>
 
-        <div class="form-group">
-            <label for="email">Email *</label>
-            <input type="email" id="email" name="email" required>
-        </div>
+            <form id="resumeForm" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="fullName">Full Name *</label>
+                    <input type="text" id="fullName" name="fullName" required 
+                           minlength="2" maxlength="50"
+                           placeholder="Enter your full name">
+                    <div class="validation-message" id="fullNameError"></div>
+                </div>
 
-        <div class="form-group">
-            <label for="phone">Phone Number *</label>
-            <input type="tel" id="phone" name="phone" required>
-        </div>
+                <div class="form-group">
+                    <label for="email">Email Address *</label>
+                    <input type="email" id="email" name="email" required
+                           placeholder="Enter your email address">
+                    <div class="validation-message" id="emailError"></div>
+                </div>
 
-        <div class="form-group">
-            <label for="experience">Years of Experience *</label>
-            <input type="number" id="experience" name="experience" min="0" max="50" required>
-        </div>
+                <div class="form-group">
+                    <label for="phone">Phone Number *</label>
+                    <input type="tel" id="phone" name="phone" required
+                           pattern="[+]?[(]?[0-9]{3}[)]?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}"
+                           placeholder="Enter your phone number">
+                    <div class="validation-message" id="phoneError"></div>
+                </div>
 
-        <div class="form-group">
-            <label for="skills">Skills (comma-separated)</label>
-            <input type="text" id="skills" name="skills" placeholder="e.g., JavaScript, Python, React">
-        </div>
+                <div class="form-group">
+                    <label for="experience">Years of Experience *</label>
+                    <input type="number" id="experience" name="experience" 
+                           required min="0" max="50"
+                           placeholder="Enter years of experience">
+                    <div class="validation-message" id="experienceError"></div>
+                </div>
 
-        <div class="form-group">
-            <label for="currentRole">Current Role</label>
-            <input type="text" id="currentRole" name="currentRole">
-        </div>
+                <div class="form-group">
+                    <label for="skills">Skills (comma-separated)</label>
+                    <input type="text" id="skills" name="skills" 
+                           placeholder="e.g., JavaScript, Python, React">
+                    <div class="skills-container" id="skillsContainer"></div>
+                </div>
 
-        <div class="form-group">
-            <label for="resume">Resume (PDF, DOC, DOCX) *</label>
-            <input type="file" id="resume" name="resume" accept=".pdf,.doc,.docx" required>
-        </div>
+                <div class="form-group">
+                    <label for="currentRole">Current Role</label>
+                    <input type="text" id="currentRole" name="currentRole"
+                           placeholder="Enter your current role">
+                </div>
 
-        <button type="submit">Submit Application</button>
-        <p id="errorMessage" class="error"></p>
-        <p id="successMessage" class="success"></p>
-    </form>
+                <div class="form-group">
+                    <label for="resume">Resume (PDF, DOC, DOCX) *</label>
+                    <div class="file-input-container">
+                        <div class="file-input-button" id="fileInputButton">
+                            Click to select file or drag and drop
+                        </div>
+                        <input type="file" id="resume" name="resume" 
+                               accept=".pdf,.doc,.docx" required
+                               class="file-input">
+                    </div>
+                    <div class="file-name" id="fileName"></div>
+                    <div class="validation-message" id="resumeError"></div>
+                </div>
+
+                <div class="message message-error" id="errorMessage"></div>
+                <div class="message message-success" id="successMessage"></div>
+
+                <button type="submit" class="btn btn-primary" id="submitButton">
+                    <span>Submit Application</span>
+                    <div class="spinner" id="submitSpinner"></div>
+                </button>
+            </form>
+        </div>
+    </div>
 
     <script>
-        document.getElementById('resumeForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('resumeForm');
+            const fileInput = document.getElementById('resume');
+            const fileInputButton = document.getElementById('fileInputButton');
+            const fileName = document.getElementById('fileName');
+            const submitButton = document.getElementById('submitButton');
+            const submitSpinner = document.getElementById('submitSpinner');
             const errorMessage = document.getElementById('errorMessage');
             const successMessage = document.getElementById('successMessage');
-            errorMessage.style.display = 'none';
-            successMessage.style.display = 'none';
+            const skillsInput = document.getElementById('skills');
+            const skillsContainer = document.getElementById('skillsContainer');
 
-            const formData = new FormData(e.target);
+            // File input handling
+            fileInput.addEventListener('change', function(e) {
+                if (this.files[0]) {
+                    fileName.textContent = this.files[0].name;
+                    fileInputButton.style.borderColor = 'var(--primary-color)';
+                } else {
+                    fileName.textContent = '';
+                    fileInputButton.style.borderColor = 'var(--border-color)';
+                }
+            });
 
-            try {
-                const response = await fetch('/api/submissions', {
-                    method: 'POST',
-                    body: formData
+            // Drag and drop handling
+            fileInputButton.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                this.style.borderColor = 'var(--primary-color)';
+                this.style.backgroundColor = 'rgba(76, 175, 80, 0.1)';
+            });
+
+            fileInputButton.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                this.style.borderColor = 'var(--border-color)';
+                this.style.backgroundColor = 'var(--bg-color)';
+            });
+
+            fileInputButton.addEventListener('drop', function(e) {
+                e.preventDefault();
+                this.style.borderColor = 'var(--border-color)';
+                this.style.backgroundColor = 'var(--bg-color)';
+                
+                const file = e.dataTransfer.files[0];
+                if (file) {
+                    const allowedTypes = ['.pdf', '.doc', '.docx'];
+                    const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+                    
+                    if (allowedTypes.includes(fileExtension)) {
+                        fileInput.files = e.dataTransfer.files;
+                        fileName.textContent = file.name;
+                        fileInputButton.style.borderColor = 'var(--primary-color)';
+                    } else {
+                        showError('Please upload a PDF, DOC, or DOCX file');
+                    }
+                }
+            });
+
+            // Skills input handling
+            skillsInput.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' || e.key === ',') {
+                    e.preventDefault();
+                    const skill = this.value.trim();
+                    if (skill) {
+                        addSkillTag(skill);
+                        this.value = '';
+                    }
+                }
+            });
+
+            function addSkillTag(skill) {
+                const tag = document.createElement('div');
+                tag.className = 'skill-tag';
+                tag.innerHTML = `
+                    ${skill}
+                    <button type="button" onclick="this.parentElement.remove()">×</button>
+                `;
+                skillsContainer.appendChild(tag);
+            }
+
+            // Form submission
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                
+                // Reset messages
+                errorMessage.style.display = 'none';
+                successMessage.style.display = 'none';
+
+                // Show loading state
+                submitButton.disabled = true;
+                submitSpinner.style.display = 'block';
+
+                // Collect skills
+                const skillTags = Array.from(skillsContainer.children).map(tag => 
+                    tag.textContent.trim().replace('×', '')
+                );
+
+                const formData = new FormData(e.target);
+                formData.set('skills', skillTags.join(','));
+
+                try {
+                    const response = await fetch('/api/submissions', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    const result = await response.json();
+
+                    if (!response.ok) {
+                        throw new Error(result.error || 'Failed to submit application');
+                    }
+
+                    showSuccess('Application submitted successfully!');
+                    form.reset();
+                    skillsContainer.innerHTML = '';
+                    fileName.textContent = '';
+                    fileInputButton.style.borderColor = 'var(--border-color)';
+                } catch (error) {
+                    showError(error.message);
+                } finally {
+                    submitButton.disabled = false;
+                    submitSpinner.style.display = 'none';
+                }
+            });
+
+            // Helper functions
+            function showError(message) {
+                errorMessage.textContent = message;
+                errorMessage.style.display = 'block';
+                errorMessage.classList.add('show');
+            }
+
+            function showSuccess(message) {
+                successMessage.textContent = message;
+                successMessage.style.display = 'block';
+                successMessage.classList.add('show');
+            }
+
+            // Form validation
+            const inputs = form.querySelectorAll('input[required]');
+            inputs.forEach(input => {
+                input.addEventListener('invalid', function(e) {
+                    e.preventDefault();
+                    const errorDiv = document.getElementById(`${this.id}Error`);
+                    if (errorDiv) {
+                        errorDiv.textContent = this.validationMessage;
+                        errorDiv.style.display = 'block';
+                    }
                 });
 
-                const result = await response.json();
-
-                if (!response.ok) {
-                    throw new Error(result.error || 'Failed to submit application');
-                }
-
-                successMessage.textContent = 'Application submitted successfully!';
-                successMessage.style.display = 'block';
-                e.target.reset();
-            } catch (error) {
-                errorMessage.textContent = error.message;
-                errorMessage.style.display = 'block';
-            }
+                input.addEventListener('input', function() {
+                    const errorDiv = document.getElementById(`${this.id}Error`);
+                    if (errorDiv) {
+                        errorDiv.style.display = 'none';
+                    }
+                });
+            });
         });
     </script>
 </body>

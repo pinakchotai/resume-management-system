@@ -91,7 +91,17 @@ const checkAdminConfig = async () => {
     }
 };
 
-// Admin Registration Routes (must be before static file serving)
+// Serve static files for public routes
+app.use(express.static('public', {
+    index: 'index.html',
+    setHeaders: (res, path) => {
+        if (path.endsWith('admin.html') || path.endsWith('admin-login.html') || path.endsWith('admin-register.html')) {
+            res.status(403).end('Forbidden');
+        }
+    }
+}));
+
+// Admin Registration Routes
 app.get('/admin-register', async (req, res) => {
     const isConfigured = await checkAdminConfig();
     if (!isConfigured) {
@@ -100,42 +110,42 @@ app.get('/admin-register', async (req, res) => {
     res.redirect('/admin-login');
 });
 
+app.get('/admin-login', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin-login.html'));
+});
+
+app.get('/admin', authenticateAdmin, (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
+});
+
+// Admin API Routes
 app.post('/api/admin/register', async (req, res) => {
     try {
-        console.log('Starting admin registration process...');
-        
         const isConfigured = await checkAdminConfig();
         if (isConfigured) {
-            console.log('Admin already configured');
             return res.status(403).json({ error: 'Admin already configured' });
         }
 
         const { email, password } = req.body;
-        console.log('Received registration request for email:', email);
 
         // Validate email and password
         if (!email || !password) {
-            console.log('Missing email or password');
             return res.status(400).json({ error: 'Email and password are required' });
         }
 
         if (password.length < 8) {
-            console.log('Password too short');
             return res.status(400).json({ error: 'Password must be at least 8 characters long' });
         }
 
         // Hash password
-        console.log('Hashing password...');
         const salt = await bcrypt.genSalt(10);
         const hashedPassword = await bcrypt.hash(password, salt);
 
         // Generate secure tokens
-        console.log('Generating secure tokens...');
         const jwtSecret = crypto.randomBytes(32).toString('hex');
         const cookieSecret = crypto.randomBytes(32).toString('hex');
 
         // Create .env file content
-        console.log('Creating .env file content...');
         const envContent = `# Security
 JWT_SECRET=${jwtSecret}
 ADMIN_PASSWORD_HASH=${hashedPassword}
@@ -158,25 +168,14 @@ MAX_FILE_SIZE=2097152 # 2MB in bytes
 ALLOWED_FILE_TYPES=application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document`;
 
         // Write to .env file
-        console.log('Writing .env file...');
-        try {
-            await fs.writeFile('.env', envContent, { encoding: 'utf8', flag: 'w' });
-        } catch (writeError) {
-            console.error('Error writing .env file:', writeError);
-            return res.status(500).json({ 
-                error: 'Error writing configuration file',
-                details: writeError.message
-            });
-        }
+        await fs.writeFile('.env', envContent, { encoding: 'utf8', flag: 'w' });
 
         // Set admin as configured
-        console.log('Setting admin configuration...');
         adminConfigured = true;
         process.env.ADMIN_EMAIL = email;
         process.env.ADMIN_PASSWORD_HASH = hashedPassword;
         process.env.JWT_SECRET = jwtSecret;
 
-        console.log('Admin registration successful');
         res.status(201).json({ 
             message: 'Admin configured successfully',
             note: 'Please restart the server to apply changes'
@@ -188,15 +187,6 @@ ALLOWED_FILE_TYPES=application/pdf,application/msword,application/vnd.openxmlfor
             details: error.message
         });
     }
-});
-
-// Admin Authentication Routes
-app.get('/admin-login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin-login.html'));
-});
-
-app.get('/admin', authenticateAdmin, (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
 app.post('/api/admin/login', async (req, res) => {
@@ -236,16 +226,6 @@ app.post('/api/admin/logout', (req, res) => {
     res.clearCookie('adminToken');
     res.json({ message: 'Logged out successfully' });
 });
-
-// Serve static files (after admin routes)
-app.use(express.static('public', {
-    index: 'index.html',
-    setHeaders: (res, path) => {
-        if (path.endsWith('admin.html')) {
-            res.status(403).end('Forbidden');
-        }
-    }
-}));
 
 /**
  * File Upload Configuration
