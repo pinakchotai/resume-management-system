@@ -1,22 +1,42 @@
 # Changelog
 
-## [1.0.3] - 2023-12-17
+## [1.0.4] - 2024-12-17
 
 ### Added
-- Simultaneous resume download and view functionality
-- Improved file handling for resume downloads
-- Enhanced logging for file operations
+- Added Excel export functionality for submissions
+- Added proper error handling and notifications for status updates
+- Added rate limiting middleware for API protection
 
 ### Changed
-- Updated UI design across all pages
-- Standardized font (Helvetica) and color scheme
-- Improved button styles and layout consistency
-- Enhanced mobile responsiveness
+- Reorganized project structure to follow industry standards
+- Moved all source files to src directory
+- Improved file organization and modularity
+- Updated import paths to match new structure
+- Enhanced error handling across the application
 
 ### Fixed
-- Resume download and view functionality
-- File streaming issues
-- Content-Type handling for different file types
+- Fixed CSRF token handling in bulk downloads
+- Fixed status update UI feedback
+- Fixed file upload validation messages
+- Fixed form submission handling
+
+## [1.0.3] - 2024-12-17
+
+### Added
+- Added GridFS for file storage
+- Added bulk download functionality
+- Added proper error handling
+- Added logging system
+
+### Changed
+- Updated file storage system to use GridFS
+- Improved error messages and logging
+- Enhanced security measures
+
+### Fixed
+- Fixed file upload issues
+- Fixed download functionality
+- Fixed CSRF token handling
 
 ## [1.0.2] - 2023-12-16
 
