@@ -165,6 +165,52 @@
                 text-align: center;
             }
         }
+
+        .status-update-message {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 5px;
+            font-weight: bold;
+            animation: slideIn 0.3s ease-out;
+            z-index: 1000;
+        }
+
+        .status-update-message.success {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .status-update-message.error {
+            background-color: #f44336;
+            color: white;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .status-btn {
+            transition: all 0.3s ease;
+        }
+
+        .status-btn.active {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .status-btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 <body>
@@ -240,15 +286,12 @@
             </div>
 
             <div class="action-buttons">
-                <form action="/admin/submissions/<%= submission._id %>/status" method="POST" style="display: inline;">
-                    <input type="hidden" name="_csrf" value="<%= csrfToken %>">
-                    <select name="status" onchange="this.form.submit()">
-                        <option value="pending" <%= submission.status === 'pending' ? 'selected' : '' %>>Pending</option>
-                        <option value="reviewed" <%= submission.status === 'reviewed' ? 'selected' : '' %>>Reviewed</option>
-                        <option value="shortlisted" <%= submission.status === 'shortlisted' ? 'selected' : '' %>>Shortlisted</option>
-                        <option value="rejected" <%= submission.status === 'rejected' ? 'selected' : '' %>>Rejected</option>
-                    </select>
-                </form>
+                <select id="statusSelect" class="status-select">
+                    <option value="pending" <%= submission.status === 'pending' ? 'selected' : '' %>>Pending</option>
+                    <option value="reviewed" <%= submission.status === 'reviewed' ? 'selected' : '' %>>Reviewed</option>
+                    <option value="shortlisted" <%= submission.status === 'shortlisted' ? 'selected' : '' %>>Shortlisted</option>
+                    <option value="rejected" <%= submission.status === 'rejected' ? 'selected' : '' %>>Rejected</option>
+                </select>
             </div>
         </div>
     </div>
@@ -270,6 +313,60 @@
                 alert('Error downloading file');
             }
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const statusSelect = document.getElementById('statusSelect');
+            const statusBadge = document.querySelector('.status-badge');
+
+            statusSelect.addEventListener('change', async function() {
+                const newStatus = this.value;
+                const submissionId = '<%= submission._id %>';
+                
+                try {
+                    const response = await fetch(`/admin/submissions/${submissionId}/status`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            ...(document.querySelector('meta[name="csrf-token"]')?.content && {
+                                'CSRF-Token': document.querySelector('meta[name="csrf-token"]').content
+                            })
+                        },
+                        body: JSON.stringify({ status: newStatus })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Failed to update status');
+                    }
+
+                    const result = await response.json();
+                    
+                    // Update the status badge
+                    if (statusBadge) {
+                        statusBadge.className = `status-badge status-${newStatus}`;
+                        statusBadge.textContent = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+                    }
+
+                    // Show success message
+                    showMessage('Status updated successfully', 'success');
+                } catch (error) {
+                    console.error('Error updating status:', error);
+                    showMessage('Failed to update status', 'error');
+                    // Revert select to previous value on error
+                    this.value = statusBadge.textContent.toLowerCase();
+                }
+            });
+
+            function showMessage(text, type) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `status-update-message ${type}`;
+                messageDiv.textContent = text;
+                document.body.appendChild(messageDiv);
+                
+                setTimeout(() => {
+                    messageDiv.remove();
+                }, 3000);
+            }
+        });
     </script>
 </body>
 </html> 

@@ -8,29 +8,42 @@ const adminSchema = new mongoose.Schema({
         unique: true,
         trim: true
     },
-    passwordHash: {
+    password: {
         type: String,
         required: true
     },
-    lastLogin: {
-        type: Date,
-        default: null
-    },
-    loginAttempts: {
-        type: Number,
-        default: 0
+    passwordHash: {
+        type: String,
+        required: false
     },
     isLocked: {
         type: Boolean,
         default: false
+    },
+    lastLogin: {
+        type: Date
     }
 }, {
     timestamps: true
 });
 
+// Pre-save middleware to handle password hashing
+adminSchema.pre('save', async function(next) {
+    if (this.isModified('password')) {
+        const salt = await bcrypt.genSalt(10);
+        this.password = await bcrypt.hash(this.password, salt);
+    }
+    next();
+});
+
 // Method to validate password
 adminSchema.methods.validatePassword = async function(password) {
-    return bcrypt.compare(password, this.passwordHash);
+    if (this.password) {
+        return await bcrypt.compare(password, this.password);
+    } else if (this.passwordHash) {
+        return await bcrypt.compare(password, this.passwordHash);
+    }
+    return false;
 };
 
 // Method to handle failed login attempt

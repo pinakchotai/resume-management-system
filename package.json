@@ -1,6 +1,6 @@
 {
   "name": "resume-management-system",
-  "version": "1.0.3",
+  "version": "1.0.4-dev",
   "description": "A system to manage resume submissions",
   "type": "module",
   "main": "server.js",
@@ -13,24 +13,30 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "bcryptjs": "^2.4.3",
-    "compression": "^1.7.4",
-    "connect-mongo": "^5.1.0",
-    "cookie-parser": "^1.4.6",
-    "cors": "^2.8.5",
-    "dotenv": "^16.0.3",
-    "ejs": "^3.1.9",
-    "express": "^4.18.2",
-    "express-rate-limit": "^6.7.0",
-    "express-session": "^1.18.1",
-    "helmet": "^7.0.0",
-    "jsonwebtoken": "^9.0.0",
-    "mongoose": "^7.0.3",
-    "morgan": "^1.10.0",
-    "multer": "^1.4.5-lts.1",
-    "winston": "^3.8.2"
+    "bcryptjs": "2.4.3",
+    "bson": "5.5.1",
+    "compression": "1.7.4",
+    "connect-mongo": "5.1.0",
+    "cookie-parser": "1.4.6",
+    "cors": "2.8.5",
+    "dotenv": "16.0.3",
+    "ejs": "3.1.9",
+    "express": "4.18.2",
+    "express-rate-limit": "6.7.0",
+    "express-session": "1.18.0",
+    "gridfs-stream": "1.1.1",
+    "helmet": "7.0.0",
+    "jszip": "3.10.1",
+    "jsonwebtoken": "9.0.0",
+    "moment": "2.30.1",
+    "mongodb": "5.9.2",
+    "mongoose": "7.0.3",
+    "morgan": "1.10.0",
+    "multer": "1.4.4",
+    "winston": "3.8.2",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
-    "nodemon": "^2.0.22"
+    "nodemon": "2.0.22"
   }
 }

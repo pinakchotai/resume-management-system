@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Resume Management System</title>
+    <style>
+        :root {
+            --background-color: #B1ABAB;
+            --card-background: #FFFFFF;
+            --text-color: #000000;
+            --input-background: #D9D9D9;
+            --border-radius: 20px;
+            --header-background: #333333;
+            --status-pending-bg: #ffeeba;
+            --status-pending-color: #856404;
+            --status-reviewed-bg: #b8daff;
+            --status-reviewed-color: #004085;
+            --status-shortlisted-bg: #c3e6cb;
+            --status-shortlisted-color: #155724;
+            --status-rejected-bg: #f5c6cb;
+            --status-rejected-color: #721c24;
+        }
+
+        body {
+            font-family: "Helvetica", Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--background-color);
+            min-height: 100vh;
+        }
+
+        .header {
+            background-color: var(--header-background);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .header h1 {
+            margin: 0;
+            font-size: 1.5rem;
+            font-family: "Helvetica", Arial, sans-serif;
+        }
+
+        .logout-btn {
+            background-color: transparent;
+            color: white;
+            border: 1px solid white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: "Helvetica", Arial, sans-serif;
+            font-weight: bold;
+            text-decoration: none;
+        }
+
+        .container {
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--card-background);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-card h3 {
+            margin: 0 0 0.5rem 0;
+            color: var(--text-color);
+            font-weight: bold;
+        }
+
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--text-color);
+        }
+
+        .progress-container {
+            background: var(--card-background);
+            padding: 1.5rem;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 2rem;
+        }
+
+        .progress-bar {
+            display: flex;
+            height: 25px;
+            border-radius: 10px;
+            overflow: hidden;
+            width: 100%;
+        }
+
+        .progress-segment {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-color);
+            font-weight: bold;
+            font-size: 0.9rem;
+            transition: width 0.3s ease;
+            padding: 0 1rem;
+            white-space: nowrap;
+        }
+
+        .progress-pending { 
+            background-color: var(--status-pending-bg);
+            color: var(--status-pending-color);
+        }
+        .progress-reviewed { 
+            background-color: var(--status-reviewed-bg);
+            color: var(--status-reviewed-color);
+        }
+        .progress-shortlisted { 
+            background-color: var(--status-shortlisted-bg);
+            color: var(--status-shortlisted-color);
+        }
+        .progress-rejected { 
+            background-color: var(--status-rejected-bg);
+            color: var(--status-rejected-color);
+        }
+
+        .submissions {
+            background: var(--card-background);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .submissions-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .submissions h2 {
+            margin: 0;
+            font-weight: bold;
+            color: var(--text-color);
+        }
+
+        .search-box {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .search-box input,
+        .search-box select {
+            padding: 0.75rem 1rem;
+            border: none;
+            border-radius: 10px;
+            background-color: var(--input-background);
+            font-family: "Helvetica", Arial, sans-serif;
+        }
+
+        .search-box input {
+            width: 300px;
+        }
+
+        .search-box select {
+            min-width: 200px;
+            cursor: pointer;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .filter-label {
+            font-weight: bold;
+            color: var(--text-color);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: "Helvetica", Arial, sans-serif;
+        }
+
+        th, td {
+            padding: 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--input-background);
+        }
+
+        th {
+            background-color: var(--input-background);
+            font-weight: bold;
+            color: var(--text-color);
+        }
+
+        .status-badge {
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .status-badge.pending { background-color: var(--status-pending-bg); color: var(--status-pending-color); }
+        .status-badge.reviewed { background-color: var(--status-reviewed-bg); color: var(--status-reviewed-color); }
+        .status-badge.shortlisted { background-color: var(--status-shortlisted-bg); color: var(--status-shortlisted-color); }
+        .status-badge.rejected { background-color: var(--status-rejected-bg); color: var(--status-rejected-color); }
+
+        .view-btn {
+            padding: 0.5rem 1rem;
+            background-color: var(--input-background);
+            color: var(--text-color);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            text-decoration: none;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .bulk-actions {
+            margin-bottom: 1rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .download-btn {
+            padding: 0.75rem 1.5rem;
+            background-color: var(--input-background);
+            color: var(--text-color);
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: "Helvetica", Arial, sans-serif;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background-color 0.3s ease;
+        }
+
+        .download-btn:hover {
+            background-color: #c8c8c8;
+        }
+
+        .download-btn:active {
+            background-color: #b8b8b8;
+        }
+
+        .download-btn#exportExcel {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .download-btn#exportExcel:hover {
+            background-color: #45a049;
+        }
+
+        .download-btn#exportExcel:active {
+            background-color: #3d8b40;
+        }
+
+        .download-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .checkbox-cell {
+            width: 40px;
+            text-align: center;
+        }
+
+        .checkbox-input {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .stats {
+                grid-template-columns: 1fr;
+            }
+            
+            .search-box input {
+                width: 100%;
+            }
+            
+            .submissions {
+                padding: 1rem;
+            }
+            
+            .submissions-header {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            th, td {
+                padding: 0.75rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <h1>Admin Dashboard</h1>
+        <a href="/admin/logout" class="logout-btn">Logout</a>
+    </header>
+
+    <div class="container">
+        <div class="stats">
+            <div class="stat-card">
+                <h3>Today's Submissions</h3>
+                <div class="value"><%= typeof stats !== 'undefined' && stats.todaySubmissions !== undefined ? stats.todaySubmissions : 0 %></div>
+            </div>
+            <div class="stat-card">
+                <h3>Pending Review</h3>
+                <div class="value"><%= typeof stats !== 'undefined' && stats.pendingReview !== undefined ? stats.pendingReview : 0 %></div>
+            </div>
+            <div class="stat-card">
+                <h3>Shortlisted</h3>
+                <div class="value"><%= typeof stats !== 'undefined' && stats.shortlisted !== undefined ? stats.shortlisted : 0 %></div>
+            </div>
+        </div>
+
+        <div class="progress-container">
+            <div class="progress-bar">
+                <% if (typeof stats !== 'undefined' && stats.total > 0) { %>
+                    <div class="progress-segment progress-pending" data-percentage="<%= stats.percentages?.pending || 0 %>">
+                        Pending (<%= stats.pending || 0 %>)
+                    </div>
+                    <div class="progress-segment progress-reviewed" data-percentage="<%= stats.percentages?.reviewed || 0 %>">
+                        Reviewed (<%= stats.reviewed || 0 %>)
+                    </div>
+                    <div class="progress-segment progress-shortlisted" data-percentage="<%= stats.percentages?.shortlisted || 0 %>">
+                        Shortlisted (<%= stats.shortlisted || 0 %>)
+                    </div>
+                    <div class="progress-segment progress-rejected" data-percentage="<%= stats.percentages?.rejected || 0 %>">
+                        Rejected (<%= stats.rejected || 0 %>)
+                    </div>
+                <% } else { %>
+                    <div class="progress-segment" style="flex-basis: 100%">
+                        No submissions yet
+                    </div>
+                <% } %>
+            </div>
+        </div>
+
+        <div class="submissions">
+            <div class="submissions-header">
+                <h2>Recent Submissions</h2>
+                <div class="filter-group">
+                    <div class="search-box">
+                        <input type="text" id="searchInput" placeholder="Search by name or email...">
+                    </div>
+                    <div class="search-box">
+                        <select id="skillFilter">
+                            <option value="">All Skills</option>
+                            <% uniqueSkills.forEach(skill => { %>
+                                <option value="<%= skill %>"><%= skill.charAt(0).toUpperCase() + skill.slice(1) %></option>
+                            <% }); %>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bulk-actions">
+                <button id="downloadSelected" class="download-btn" disabled>
+                    Download Selected Resumes (0)
+                </button>
+                <button id="exportExcel" class="download-btn">
+                    Export to Excel
+                </button>
+            </div>
+
+            <% if (submissions && submissions.length > 0) { %>
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="checkbox-cell">
+                                <input type="checkbox" id="selectAll" class="checkbox-input">
+                            </th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Submitted</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <% submissions.forEach(function(submission) { %>
+                            <tr data-skills='<%= JSON.stringify(submission.skills) %>'>
+                                <td class="checkbox-cell">
+                                    <input type="checkbox" 
+                                           class="checkbox-input submission-checkbox" 
+                                           value="<%= submission._id %>"
+                                           data-name="<%= submission.fullName %>">
+                                </td>
+                                <td><%= submission.fullName || 'N/A' %></td>
+                                <td><%= submission.email || 'N/A' %></td>
+                                <td>
+                                    <span class="status-badge <%= submission.status || 'pending' %>">
+                                        <%= submission.status ? (submission.status.charAt(0).toUpperCase() + submission.status.slice(1)) : 'Pending' %>
+                                    </span>
+                                </td>
+                                <td>
+                                    <% try { %>
+                                        <% if (typeof moment !== 'undefined') { %>
+                                            <%= moment(submission.createdAt).fromNow() %>
+                                        <% } else { %>
+                                            <%= new Date(submission.createdAt).toLocaleString() %>
+                                        <% } %>
+                                    <% } catch (e) { %>
+                                        N/A
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <a href="/admin/submissions/<%= submission._id %>" class="view-btn">View</a>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    </tbody>
+                </table>
+            <% } else { %>
+                <div style="text-align: center; padding: 2rem;">No submissions found</div>
+            <% } %>
+        </div>
+    </div>
+
+    <script>
+    // Add this at the beginning of the script section
+    // Set progress bar segment widths
+    document.querySelectorAll('.progress-segment[data-percentage]').forEach(segment => {
+        const percentage = segment.getAttribute('data-percentage');
+        if (percentage !== null) {
+            segment.style.flexBasis = `${percentage}%`;
+        }
+    });
+
+    function filterSubmissions() {
+        try {
+            const searchTerm = document.getElementById('searchInput')?.value?.toLowerCase() || '';
+            const selectedSkill = document.getElementById('skillFilter')?.value?.toLowerCase() || '';
+            const rows = document.querySelectorAll('tbody tr');
+            
+            rows.forEach(row => {
+                try {
+                    const text = row.textContent.toLowerCase();
+                    let skills = [];
+                    try {
+                        const skillsData = row.getAttribute('data-skills');
+                        skills = skillsData ? JSON.parse(skillsData) : [];
+                    } catch (e) {
+                        console.error('Error parsing skills:', e);
+                        skills = [];
+                    }
+                    skills = skills.map(s => (s || '').toLowerCase());
+                    
+                    const matchesSearch = text.includes(searchTerm);
+                    const matchesSkill = !selectedSkill || skills.includes(selectedSkill);
+                    
+                    row.style.display = (matchesSearch && matchesSkill) ? '' : 'none';
+                } catch (e) {
+                    console.error('Error processing row:', e);
+                    row.style.display = '';
+                }
+            });
+        } catch (e) {
+            console.error('Error in filterSubmissions:', e);
+        }
+    }
+
+    // Add data-skills attribute to each row safely
+    try {
+        document.querySelectorAll('tbody tr').forEach(row => {
+            try {
+                const skillsCell = row.querySelector('td[data-skills]');
+                if (skillsCell && skillsCell.getAttribute('data-skills')) {
+                    row.setAttribute('data-skills', skillsCell.getAttribute('data-skills'));
+                }
+            } catch (e) {
+                console.error('Error processing row skills:', e);
+            }
+        });
+    } catch (e) {
+        console.error('Error setting up skills data:', e);
+    }
+
+    // Event listeners for both filters
+    try {
+        const searchInput = document.getElementById('searchInput');
+        const skillFilter = document.getElementById('skillFilter');
+        
+        if (searchInput) searchInput.addEventListener('input', filterSubmissions);
+        if (skillFilter) skillFilter.addEventListener('change', filterSubmissions);
+    } catch (e) {
+        console.error('Error setting up filters:', e);
+    }
+
+    // Bulk download functionality
+    try {
+        const selectAllCheckbox = document.getElementById('selectAll');
+        const submissionCheckboxes = document.querySelectorAll('.submission-checkbox');
+        const downloadButton = document.getElementById('downloadSelected');
+        
+        function updateDownloadButton() {
+            try {
+                const selectedCount = document.querySelectorAll('.submission-checkbox:checked').length;
+                if (downloadButton) {
+                    downloadButton.disabled = selectedCount === 0;
+                    downloadButton.textContent = `Download Selected Resumes (${selectedCount})`;
+                }
+            } catch (e) {
+                console.error('Error updating download button:', e);
+            }
+        }
+
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', function() {
+                try {
+                    submissionCheckboxes.forEach(checkbox => {
+                        checkbox.checked = this.checked;
+                    });
+                    updateDownloadButton();
+                } catch (e) {
+                    console.error('Error in select all handler:', e);
+                }
+            });
+        }
+
+        submissionCheckboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', function() {
+                try {
+                    const allChecked = Array.from(submissionCheckboxes).every(cb => cb.checked);
+                    if (selectAllCheckbox) selectAllCheckbox.checked = allChecked;
+                    updateDownloadButton();
+                } catch (e) {
+                    console.error('Error in checkbox handler:', e);
+                }
+            });
+        });
+
+        if (downloadButton) {
+            downloadButton.addEventListener('click', async function() {
+                try {
+                    const selectedIds = Array.from(document.querySelectorAll('.submission-checkbox:checked'))
+                        .map(checkbox => checkbox.value)
+                        .filter(id => id);
+                    
+                    if (selectedIds.length === 0) return;
+
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '/admin/submissions/bulk-download';
+                    form.style.display = 'none';
+
+                    // Add CSRF token if available
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+                    if (csrfToken) {
+                        const csrfInput = document.createElement('input');
+                        csrfInput.type = 'hidden';
+                        csrfInput.name = '_csrf';
+                        csrfInput.value = csrfToken;
+                        form.appendChild(csrfInput);
+                    }
+
+                    const idsInput = document.createElement('input');
+                    idsInput.type = 'hidden';
+                    idsInput.name = 'ids';
+                    idsInput.value = JSON.stringify(selectedIds);
+                    form.appendChild(idsInput);
+
+                    document.body.appendChild(form);
+                    form.submit();
+                } catch (error) {
+                    console.error('Error downloading files:', error);
+                    alert('Error downloading files. Please try again.');
+                }
+            });
+        }
+    } catch (e) {
+        console.error('Error setting up bulk download:', e);
+    }
+
+    // Excel export functionality
+    try {
+        const exportButton = document.getElementById('exportExcel');
+        if (exportButton) {
+            exportButton.addEventListener('click', async function() {
+                try {
+                    const form = document.createElement('form');
+                    form.method = 'POST';
+                    form.action = '/admin/submissions/export-excel';
+                    form.style.display = 'none';
+
+                    // Add CSRF token if available
+                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+                    if (csrfToken) {
+                        const csrfInput = document.createElement('input');
+                        csrfInput.type = 'hidden';
+                        csrfInput.name = '_csrf';
+                        csrfInput.value = csrfToken;
+                        form.appendChild(csrfInput);
+                    }
+
+                    document.body.appendChild(form);
+                    form.submit();
+                } catch (error) {
+                    console.error('Error exporting to Excel:', error);
+                    alert('Error exporting to Excel. Please try again.');
+                }
+            });
+        }
+    } catch (e) {
+        console.error('Error setting up Excel export:', e);
+    }
+    </script>
+</body>
+</html> 

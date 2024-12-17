@@ -64,22 +64,71 @@
             const fileNameDisplay = document.getElementById('fileName');
             const submitButton = document.getElementById('submitButton');
             const uploadButton = document.querySelector('.file-upload-button');
+            const inputs = form.querySelectorAll('input, select, textarea');
+
+            // Function to enable/disable form inputs
+            function setFormEnabled(enabled) {
+                const inputs = form.querySelectorAll('input:not([type="file"]), select, textarea');
+                inputs.forEach(input => {
+                    input.readOnly = !enabled;
+                });
+
+                // Handle submit button
+                submitButton.disabled = !enabled;
+                
+                // Handle file upload button
+                uploadButton.style.pointerEvents = enabled ? 'auto' : 'none';
+                uploadButton.style.opacity = enabled ? '1' : '0.5';
+
+                // Update submit button text
+                submitButton.textContent = enabled ? 'Submit Application' : 'Submitting...';
+            }
+
+            // Function to reset form state
+            function resetForm() {
+                form.reset();
+                fileInput.value = '';
+                fileNameDisplay.textContent = '';
+                uploadButton.classList.remove('has-file');
+                
+                // Enable all form elements
+                const inputs = form.querySelectorAll('input:not([type="file"]), select, textarea');
+                inputs.forEach(input => {
+                    input.readOnly = false;
+                });
+                
+                submitButton.disabled = false;
+                uploadButton.style.pointerEvents = 'auto';
+                uploadButton.style.opacity = '1';
+                submitButton.textContent = 'Submit Application';
+            }
 
             // File input change handler
             fileInput.addEventListener('change', function(e) {
                 const file = e.target.files[0];
                 if (file) {
-                    fileNameDisplay.textContent = file.name;
-                    uploadButton.classList.add('has-file');
-                    // Validate file type
+                    const maxSize = 5 * 1024 * 1024; // 5MB
                     const allowedTypes = ['.pdf', '.doc', '.docx'];
                     const fileExt = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
-                    if (!allowedTypes.includes(fileExt)) {
-                        alert('Please upload a PDF, DOC, or DOCX file');
-                        fileInput.value = '';
+
+                    if (file.size > maxSize) {
+                        alert('File size must be less than 5MB');
+                        this.value = '';
                         fileNameDisplay.textContent = '';
                         uploadButton.classList.remove('has-file');
+                        return;
                     }
+
+                    if (!allowedTypes.includes(fileExt)) {
+                        alert('Please upload a PDF, DOC, or DOCX file');
+                        this.value = '';
+                        fileNameDisplay.textContent = '';
+                        uploadButton.classList.remove('has-file');
+                        return;
+                    }
+
+                    fileNameDisplay.textContent = file.name;
+                    uploadButton.classList.add('has-file');
                 } else {
                     fileNameDisplay.textContent = '';
                     uploadButton.classList.remove('has-file');
@@ -89,11 +138,51 @@
             // Form submission handler
             form.addEventListener('submit', async function(e) {
                 e.preventDefault();
-                submitButton.disabled = true;
+                
+                // Check if file is selected
+                const fileInput = document.getElementById('resume');
+                if (!fileInput.files || !fileInput.files[0]) {
+                    alert('Please select a resume file');
+                    return;
+                }
+
+                // Validate required fields
+                const requiredFields = ['fullName', 'email', 'phone', 'experience'];
+                const missingFields = [];
+                
+                requiredFields.forEach(field => {
+                    const input = document.getElementById(field);
+                    if (!input.value.trim()) {
+                        missingFields.push(field);
+                    }
+                });
+
+                if (missingFields.length > 0) {
+                    alert(`Please fill in the following required fields: ${missingFields.join(', ')}`);
+                    return;
+                }
+
+                // Disable form and show submitting state
+                setFormEnabled(false);
                 submitButton.textContent = 'Submitting...';
                 
                 try {
-                    const formData = new FormData(form);
+                    const formData = new FormData();
+                    
+                    // Manually append form fields to ensure they're included
+                    formData.append('fullName', document.getElementById('fullName').value.trim());
+                    formData.append('email', document.getElementById('email').value.trim());
+                    formData.append('phone', document.getElementById('phone').value.trim());
+                    formData.append('experience', document.getElementById('experience').value.trim());
+                    formData.append('skills', document.getElementById('skills').value.trim());
+                    formData.append('currentRole', document.getElementById('currentRole').value.trim());
+                    formData.append('resume', fileInput.files[0]);
+
+                    // Log form data for debugging
+                    console.log('Submitting form with data:');
+                    for (let pair of formData.entries()) {
+                        console.log(pair[0] + ': ' + pair[1]);
+                    }
                     
                     const response = await fetch('/api/submissions', {
                         method: 'POST',
@@ -107,15 +196,11 @@
                     }
 
                     alert('Application submitted successfully!');
-                    form.reset();
-                    fileNameDisplay.textContent = '';
-                    uploadButton.classList.remove('has-file');
+                    resetForm(); // This will also re-enable the form
                 } catch (error) {
                     console.error('Submission error:', error);
                     alert(error.message || 'Error submitting form');
-                } finally {
-                    submitButton.disabled = false;
-                    submitButton.textContent = 'Submit Application';
+                    setFormEnabled(true); // Re-enable the form on error
                 }
             });
         });
