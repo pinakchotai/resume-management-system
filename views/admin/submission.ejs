@@ -5,118 +5,172 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>View Submission - Resume Management System</title>
     <style>
+        :root {
+            --background-color: #B1ABAB;
+            --card-background: #FFFFFF;
+            --text-color: #000000;
+            --input-background: #D9D9D9;
+            --border-radius: 20px;
+            --header-background: #333333;
+            --status-pending-bg: #ffeeba;
+            --status-pending-color: #856404;
+            --status-reviewed-bg: #b8daff;
+            --status-reviewed-color: #004085;
+            --status-shortlisted-bg: #c3e6cb;
+            --status-shortlisted-color: #155724;
+            --status-rejected-bg: #f5c6cb;
+            --status-rejected-color: #721c24;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: "Helvetica", Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f5f5f5;
+            background-color: var(--background-color);
+            min-height: 100vh;
         }
+
         .header {
-            background-color: #333;
+            background-color: var(--header-background);
             color: white;
-            padding: 1rem;
+            padding: 1rem 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
+
         .header h1 {
             margin: 0;
             font-size: 1.5rem;
+            font-family: "Helvetica", Arial, sans-serif;
         }
+
         .container {
             max-width: 800px;
             margin: 2rem auto;
             padding: 0 1rem;
         }
+
         .submission-card {
-            background: white;
+            background: var(--card-background);
             padding: 2rem;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
+
         .field {
             margin-bottom: 1.5rem;
         }
+
         .field-label {
             font-weight: bold;
-            color: #666;
+            color: var(--text-color);
             margin-bottom: 0.5rem;
+            font-size: 16px;
         }
+
         .field-value {
-            color: #333;
+            color: var(--text-color);
+            font-size: 16px;
         }
+
         .skills-list {
             display: flex;
             flex-wrap: wrap;
             gap: 0.5rem;
         }
+
         .skill-tag {
-            background-color: #e9ecef;
-            padding: 0.25rem 0.75rem;
-            border-radius: 15px;
-            font-size: 0.9rem;
+            background-color: var(--input-background);
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            font-size: 14px;
+            color: var(--text-color);
         }
+
         .status-badge {
             display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 15px;
-            font-size: 0.9rem;
-            font-weight: 500;
+            padding: 0.5rem 1rem;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: bold;
         }
-        .status-pending { background-color: #ffeeba; color: #856404; }
-        .status-reviewed { background-color: #b8daff; color: #004085; }
-        .status-shortlisted { background-color: #c3e6cb; color: #155724; }
-        .status-rejected { background-color: #f5c6cb; color: #721c24; }
+
+        .status-pending { background-color: var(--status-pending-bg); color: var(--status-pending-color); }
+        .status-reviewed { background-color: var(--status-reviewed-bg); color: var(--status-reviewed-color); }
+        .status-shortlisted { background-color: var(--status-shortlisted-bg); color: var(--status-shortlisted-color); }
+        .status-rejected { background-color: var(--status-rejected-bg); color: var(--status-rejected-color); }
+
         .action-buttons {
             margin-top: 2rem;
             display: flex;
             gap: 1rem;
         }
+
         .btn {
             padding: 0.75rem 1.5rem;
             border: none;
-            border-radius: 4px;
+            border-radius: 10px;
             cursor: pointer;
-            font-weight: 500;
+            font-weight: bold;
             text-decoration: none;
+            font-family: "Helvetica", Arial, sans-serif;
+            background-color: var(--input-background);
+            color: var(--text-color);
+            transition: opacity 0.3s ease;
         }
-        .btn-primary {
-            background-color: #007bff;
-            color: white;
-        }
-        .btn-success {
-            background-color: #28a745;
-            color: white;
-        }
-        .btn-danger {
-            background-color: #dc3545;
-            color: white;
-        }
+
         .btn:hover {
             opacity: 0.9;
         }
+
         .button-group {
             display: flex;
             gap: 1rem;
             margin-top: 0.5rem;
         }
+
         select {
-            padding: 0.5rem;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 0.9rem;
-            background-color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-family: "Helvetica", Arial, sans-serif;
+            background-color: var(--input-background);
+            color: var(--text-color);
+            cursor: pointer;
+            font-weight: bold;
         }
+
         select:focus {
             outline: none;
-            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            .submission-card {
+                padding: 1.5rem;
+            }
+            
+            .button-group {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+                text-align: center;
+            }
         }
     </style>
 </head>
 <body>
     <header class="header">
         <h1>View Submission</h1>
-        <a href="/admin/dashboard" class="btn btn-primary">Back to Dashboard</a>
+        <a href="/admin/dashboard" class="btn">Back to Dashboard</a>
     </header>
 
     <div class="container">
@@ -170,12 +224,12 @@
                 <div class="field-label">Resume</div>
                 <div class="field-value">
                     <div class="button-group">
-                        <a href="/admin/submissions/<%= submission._id %>/view" target="_blank" class="btn btn-primary">
+                        <a href="/admin/submissions/<%= submission._id %>/view" target="_blank" class="btn">
                             View Resume
                         </a>
-                        <a href="/admin/submissions/<%= submission._id %>/download" class="btn btn-success">
+                        <button onclick="handleDownload('<%= submission._id %>')" class="btn">
                             Download Resume
-                        </a>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -198,5 +252,24 @@
             </div>
         </div>
     </div>
+
+    <script>
+        async function handleDownload(submissionId) {
+            try {
+                // First trigger the download
+                const downloadUrl = `/admin/submissions/${submissionId}/download`;
+                const viewUrl = `/admin/submissions/${submissionId}/view`;
+                
+                // Open view in new tab
+                window.open(viewUrl, '_blank');
+                
+                // Trigger download
+                window.location.href = downloadUrl;
+            } catch (error) {
+                console.error('Error handling download:', error);
+                alert('Error downloading file');
+            }
+        }
+    </script>
 </body>
 </html> 

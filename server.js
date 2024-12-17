@@ -29,6 +29,7 @@ import Logger from './config/logger.js';
 import Submission from './models/submission.js';
 import adminRouter from './routes/admin.js';
 import { authMiddleware } from './middleware/authMiddleware.js';
+import jwt from 'jsonwebtoken';
 
 // Load Environment Variables
 dotenv.config();
@@ -39,91 +40,7 @@ const __dirname = path.dirname(__filename);
 const port = process.env.PORT || 3000;
 const isProduction = process.env.NODE_ENV === 'production';
 
-// Initialize Express App
-const app = express();
-
-// Set up EJS as the template engine
-app.set('view engine', 'ejs');
-app.set('views', path.join(__dirname, 'views'));
-
-/**
- * Basic Middleware Configuration
- */
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
-
-// Session Configuration
-app.use(session({
-    secret: process.env.SESSION_SECRET,
-    resave: false,
-    saveUninitialized: false,
-    store: MongoStore.create({
-        mongoUrl: process.env.MONGODB_URI,
-        ttl: 24 * 60 * 60 // 1 day
-    }),
-    cookie: {
-        secure: isProduction,
-        httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000 // 1 day
-    }
-}));
-
-/**
- * Security Middleware Configuration
- */
-app.use(helmet({
-    contentSecurityPolicy: {
-        directives: {
-            defaultSrc: ["'self'"],
-            scriptSrc: ["'self'", "'unsafe-inline'"],
-            styleSrc: ["'self'", "'unsafe-inline'"],
-            imgSrc: ["'self'", "data:", "https:"],
-        },
-    }
-}));
-app.use(compression());
-app.use(morgan(isProduction ? 'combined' : 'dev'));
-
-// Rate limiting
-const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000,
-    max: isProduction ? 100 : 1000
-});
-app.use('/api/', limiter);
-
-// CORS configuration
-const corsOptions = {
-    origin: process.env.ALLOWED_ORIGINS?.split(',') || 'http://localhost:3001',
-    credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
-};
-app.use(cors(corsOptions));
-
-// Serve static files
-app.use(express.static('public', {
-    maxAge: isProduction ? '1d' : 0,
-    etag: true
-}));
-
-// Serve uploaded files (with authentication)
-app.use('/uploads', authMiddleware.requireAuth, express.static('uploads', {
-    maxAge: isProduction ? '1d' : 0,
-    etag: true
-}));
-
-// Initialize MongoDB connection
-connectDB();
-
-/**
- * Mount Admin Routes
- */
-app.use('/admin', adminRouter);
-
-/**
- * File Upload Configuration
- */
+// Configure multer for file uploads
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, 'uploads/');
@@ -134,24 +51,118 @@ const storage = multer.diskStorage({
     }
 });
 
-const upload = multer({ 
+const fileFilter = (req, file, cb) => {
+    const allowedMimeTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+    ];
+    
+    if (allowedMimeTypes.includes(file.mimetype)) {
+        cb(null, true);
+    } else {
+        cb(new Error('Invalid file type. Only PDF, DOC, and DOCX files are allowed.'));
+    }
+};
+
+const upload = multer({
     storage: storage,
     limits: {
         fileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024 // default 5MB
     },
-    fileFilter: (req, file, cb) => {
-        const allowedTypes = (process.env.ALLOWED_FILE_TYPES || '').split(',');
-        if (allowedTypes.includes(file.mimetype)) {
-            cb(null, true);
-        } else {
-            cb(new Error('Invalid file type'));
-        }
-    }
+    fileFilter: fileFilter
 });
 
-/**
- * Route Handlers
- */
+// Initialize Express app
+const app = express();
+
+// Security Middleware
+if (isProduction) {
+    app.use(helmet({
+        contentSecurityPolicy: {
+            directives: {
+                ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+                "script-src": ["'self'", "'unsafe-inline'", "https://unpkg.com"],
+                "img-src": ["'self'", "data:", "blob:"],
+                "connect-src": ["'self'"],
+                "frame-ancestors": ["'none'"],
+                "object-src": ["'self'"],
+                "media-src": ["'self'"],
+                "default-src": ["'self'"]
+            }
+        }
+    }));
+} else {
+    // Disable CSP in development
+    app.use(helmet({
+        contentSecurityPolicy: false
+    }));
+}
+
+// Basic Middleware
+app.use(compression());
+app.use(morgan('dev'));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser(process.env.COOKIE_SECRET));
+
+// CORS Configuration
+const corsOptions = {
+    origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : 'http://localhost:3000',
+    credentials: true
+};
+app.use(cors(corsOptions));
+
+// Rate Limiting
+const limiter = rateLimit({
+    windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
+    max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100
+});
+app.use('/api/', limiter);
+
+// Session Configuration
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    store: MongoStore.create({ 
+        mongoUrl: process.env.MONGODB_URI,
+        ttl: 24 * 60 * 60 // 1 day
+    }),
+    cookie: {
+        secure: isProduction,
+        httpOnly: true,
+        maxAge: 24 * 60 * 60 * 1000 // 1 day
+    }
+}));
+
+// Static Files - only serve public files
+app.use(express.static('public'));
+
+// Secure file access middleware
+const secureFileAccess = (req, res, next) => {
+    const token = req.cookies.adminToken;
+    
+    if (!token) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    try {
+        jwt.verify(token, process.env.JWT_SECRET);
+        next();
+    } catch (error) {
+        return res.status(401).json({ error: 'Invalid token' });
+    }
+};
+
+// Database Connection
+connectDB();
+
+// View Engine
+app.set('view engine', 'ejs');
+
+// Routes
+app.use('/admin', adminRouter);
 
 // Root endpoint - Server status check
 app.get('/', (req, res) => {
@@ -230,58 +241,6 @@ app.post('/api/submissions', upload.single('resume'), async (req, res) => {
     }
 });
 
-/**
- * Server Initialization Functions
- */
-
-// Initialize storage directories
-async function initializeStorage() {
-    try {
-        const uploadDir = path.join(__dirname, 'uploads');
-        await fs.mkdir(uploadDir, { recursive: true });
-        Logger.info(`Storage initialized at ${uploadDir}`);
-    } catch (error) {
-        Logger.error('Error initializing storage:', error);
-        throw error;
-    }
-}
-
-// Start server function
-async function startServer() {
-    try {
-        // Initialize storage
-        await initializeStorage();
-        
-        // Connect to MongoDB
-        await connectDB();
-        
-        // Start Express server
-        const server = app.listen(port, () => {
-            Logger.info('=================================');
-            Logger.info('Resume Management System Server');
-            Logger.info('=================================');
-            Logger.info(`Environment: ${process.env.NODE_ENV}`);
-            Logger.info(`Server running at http://localhost:${port}`);
-            Logger.info('Press Ctrl+C to stop the server');
-            Logger.info('=================================');
-        });
-
-        // Handle server errors
-        server.on('error', (error) => {
-            Logger.error('Server error:', error);
-            process.exit(1);
-        });
-
-    } catch (error) {
-        Logger.error('Failed to start server:', error);
-        process.exit(1);
-    }
-}
-
-/**
- * Error Handling
- */
-
 // Global error handler middleware
 app.use((err, req, res, next) => {
     Logger.error('Unhandled Error:', err);
@@ -291,29 +250,7 @@ app.use((err, req, res, next) => {
     });
 });
 
-// Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
-    Logger.error('Uncaught Exception:', error);
-    process.exit(1);
+// Start server
+app.listen(port, () => {
+    Logger.info(`Server is running on port ${port}`);
 });
-
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (error) => {
-    Logger.error('Unhandled Rejection:', error);
-    process.exit(1);
-});
-
-// Graceful shutdown
-process.on('SIGTERM', () => {
-    Logger.info('SIGTERM received. Performing graceful shutdown...');
-    app.close(() => {
-        Logger.info('Server closed. Exiting process.');
-        process.exit(0);
-    });
-});
-
-// Start the server
-startServer();
-
-// Export for serverless
-export default app;

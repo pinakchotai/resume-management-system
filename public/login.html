@@ -8,19 +8,17 @@
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
 </head>
 <body>
-    <div class="container" x-data="loginHandler">
-        <header>
+    <div class="card" x-data="loginHandler">
+        <div class="form-container">
             <h1>Admin Login</h1>
-        </header>
-
-        <main>
             <div x-show="error" class="error-message" x-text="error"></div>
-            <form @submit.prevent="login" class="submission-form">
+            <form @submit.prevent="login">
                 <div class="form-group">
                     <label for="email">Email</label>
                     <input 
                         type="email" 
                         id="email" 
+                        class="form-control"
                         x-model="formData.email" 
                         required>
                 </div>
@@ -30,18 +28,19 @@
                     <input 
                         type="password" 
                         id="password" 
+                        class="form-control"
                         x-model="formData.password" 
                         required>
                 </div>
 
                 <button 
                     type="submit" 
-                    class="submit-btn" 
+                    class="submit-button" 
                     :disabled="loading">
                     <span x-text="loading ? 'Logging in...' : 'Login'"></span>
                 </button>
             </form>
-        </main>
+        </div>
     </div>
 
     <script src="js/login.js"></script>

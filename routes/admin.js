@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import rateLimit from 'express-rate-limit';
 import * as adminController from '../controllers/adminController.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
+import Logger from '../config/logger.js';
 
 const router = express.Router();
 
@@ -28,7 +29,18 @@ router.get('/dashboard', adminController.dashboard);
 router.post('/logout', adminController.logout);
 router.get('/submissions/:id', adminController.viewSubmission);
 router.post('/submissions/:id/status', adminController.updateSubmissionStatus);
-router.get('/submissions/:id/download', adminController.downloadResume);
-router.get('/submissions/:id/view', adminController.viewResume);
+
+// File download and view routes with logging
+router.get('/submissions/:id/download', (req, res, next) => {
+    Logger.info(`Download route accessed for submission ID: ${req.params.id}`);
+    Logger.info(`Request headers:`, req.headers);
+    next();
+}, adminController.downloadResume);
+
+router.get('/submissions/:id/view', (req, res, next) => {
+    Logger.info(`View route accessed for submission ID: ${req.params.id}`);
+    Logger.info(`Request headers:`, req.headers);
+    next();
+}, adminController.viewResume);
 
 export default router; 

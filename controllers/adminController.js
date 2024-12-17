@@ -5,6 +5,8 @@ import Submission from '../models/submission.js';
 import Logger from '../config/logger.js';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { promises as fs } from 'fs';
+import { createReadStream } from 'fs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -188,34 +190,69 @@ export const updateSubmissionStatus = async (req, res) => {
 // Download resume
 export const downloadResume = async (req, res) => {
     try {
+        Logger.info(`Download request initiated for submission ID: ${req.params.id}`);
+        
         const submission = await Submission.findById(req.params.id);
         if (!submission) {
+            Logger.error(`Submission not found for ID: ${req.params.id}`);
             return res.status(404).render('error', { 
                 error: 'Submission not found' 
             });
         }
+        Logger.info(`Found submission: ${submission._id}, filename: ${submission.fileName}`);
 
         // Construct file path
         const filePath = path.join(__dirname, '..', submission.resumePath);
+        Logger.info(`Constructed file path: ${filePath}`);
 
-        // Set headers for download
+        // Check if file exists
+        try {
+            await fs.access(filePath);
+            Logger.info('File exists and is accessible');
+        } catch (error) {
+            Logger.error(`File not found at path: ${filePath}`, error);
+            return res.status(404).render('error', { 
+                error: 'Resume file not found' 
+            });
+        }
+
+        // Get file stats
+        const stats = await fs.stat(filePath);
+        Logger.info(`File stats - size: ${stats.size} bytes`);
+
+        // Set headers for forced download
         res.setHeader('Content-Type', 'application/octet-stream');
-        res.setHeader('Content-Disposition', `attachment; filename="${submission.fileName}"`);
+        res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(submission.fileName)}"`);
+        res.setHeader('Content-Length', stats.size);
+        res.setHeader('Cache-Control', 'private, no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+        Logger.info('Response headers set for download');
 
-        // Send file
-        res.download(filePath, submission.fileName, (err) => {
-            if (err) {
-                Logger.error('Download error:', err);
+        // Send file for download
+        const fileStream = createReadStream(filePath);
+        fileStream.on('error', (err) => {
+            Logger.error('Download stream error:', err);
+            if (!res.headersSent) {
                 return res.status(500).render('error', { 
                     error: 'Error downloading file' 
                 });
             }
         });
+
+        fileStream.on('end', () => {
+            Logger.info('File download completed successfully');
+        });
+
+        // Pipe the file directly to response
+        fileStream.pipe(res);
     } catch (error) {
         Logger.error('Download error:', error);
-        res.status(500).render('error', { 
-            error: 'Error downloading resume' 
-        });
+        if (!res.headersSent) {
+            res.status(500).render('error', { 
+                error: 'Error downloading resume' 
+            });
+        }
     }
 };
 
@@ -231,6 +268,19 @@ export const viewResume = async (req, res) => {
 
         // Construct file path
         const filePath = path.join(__dirname, '..', submission.resumePath);
+
+        // Check if file exists
+        try {
+            await fs.access(filePath);
+        } catch (error) {
+            Logger.error('File not found:', error);
+            return res.status(404).render('error', { 
+                error: 'Resume file not found' 
+            });
+        }
+
+        // Get file stats
+        const stats = await fs.stat(filePath);
 
         // Set appropriate content type based on file extension
         const ext = path.extname(submission.fileName).toLowerCase();
@@ -251,20 +301,30 @@ export const viewResume = async (req, res) => {
         // Set headers for inline viewing
         res.setHeader('Content-Type', contentType);
         res.setHeader('Content-Disposition', `inline; filename="${submission.fileName}"`);
+        res.setHeader('Content-Length', stats.size);
+        res.setHeader('Cache-Control', 'no-cache');
 
-        // Send file
-        res.sendFile(filePath, (err) => {
-            if (err) {
-                Logger.error('View error:', err);
-                return res.status(500).render('error', { 
+        // Stream the file
+        const fileStream = createReadStream(filePath);
+        
+        // Handle stream errors
+        fileStream.on('error', (err) => {
+            Logger.error('View error:', err);
+            if (!res.headersSent) {
+                res.status(500).render('error', { 
                     error: 'Error viewing file' 
                 });
             }
         });
+
+        // Pipe the file to response
+        fileStream.pipe(res);
     } catch (error) {
         Logger.error('View error:', error);
-        res.status(500).render('error', { 
-            error: 'Error viewing resume' 
-        });
+        if (!res.headersSent) {
+            res.status(500).render('error', { 
+                error: 'Error viewing resume' 
+            });
+        }
     }
 }; 
