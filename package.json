@@ -1,6 +1,6 @@
 {
   "name": "resume-management-system",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "description": "A system to manage resume submissions",
   "type": "module",
   "main": "server.js",
