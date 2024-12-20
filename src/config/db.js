@@ -17,30 +17,49 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/resume
 const options = {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 15000, // Timeout after 15 seconds
+    serverSelectionTimeoutMS: 30000, // Increased timeout to 30 seconds
     socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
+    retryWrites: true,
+    w: 'majority',
+    maxPoolSize: 10,
+    minPoolSize: 5,
+    maxIdleTimeMS: 10000,
+    retryReads: true
 };
+
+let cachedConnection = null;
 
 /**
  * Connect to MongoDB
  * Returns a promise that resolves when connected
  */
 const connectDB = async () => {
+    if (cachedConnection) {
+        Logger.info('Using cached database connection');
+        return cachedConnection;
+    }
+
     try {
+        Logger.info('Connecting to MongoDB...');
         const conn = await mongoose.connect(MONGODB_URI, options);
-        console.log('=================================');
-        console.log('MongoDB Connection Established');
-        console.log(`Host: ${conn.connection.host}`);
-        console.log(`Database: ${conn.connection.name}`);
-        console.log('=================================');
+        
+        cachedConnection = conn;
+
+        Logger.info('=================================');
+        Logger.info('MongoDB Connection Established');
+        Logger.info(`Host: ${conn.connection.host}`);
+        Logger.info(`Database: ${conn.connection.name}`);
+        Logger.info('=================================');
 
         // Handle connection errors after initial connection
         mongoose.connection.on('error', err => {
             Logger.error('MongoDB connection error:', err);
+            cachedConnection = null;
         });
 
         mongoose.connection.on('disconnected', () => {
-            Logger.warn('MongoDB disconnected. Attempting to reconnect...');
+            Logger.warn('MongoDB disconnected. Connection will be re-established on next request.');
+            cachedConnection = null;
         });
 
         mongoose.connection.on('reconnected', () => {
@@ -49,8 +68,9 @@ const connectDB = async () => {
 
         return conn;
     } catch (error) {
-        console.error('MongoDB connection error:', error);
-        process.exit(1);
+        Logger.error('MongoDB connection error:', error);
+        cachedConnection = null;
+        throw error; // Don't exit process, let the caller handle the error
     }
 };
 
