@@ -1,12 +1,5 @@
 /**
  * Resume Management System - Server
- * 
- * This is the main server file that handles:
- * - File uploads (resumes)
- * - Server configuration
- * - Basic routing
- * - Error handling
- * - Database connection
  */
 
 // Required External Modules
@@ -50,7 +43,6 @@ connectDB();
 app.set('view engine', 'ejs');
 const viewsPath = path.join(__dirname, 'src', 'views');
 app.set('views', viewsPath);
-Logger.info('Views directory set to:', viewsPath);
 
 // Express layouts setup - MUST be before any routes
 app.use(expressLayouts);
@@ -58,18 +50,21 @@ app.set('layout', 'layouts/main');
 app.set('layout extractScripts', true);
 app.set('layout extractStyles', true);
 
-// Add middleware to log all requests
-app.use((req, res, next) => {
-    Logger.info(`${req.method} ${req.url}`);
-    next();
-});
-
 // Basic middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(compression());
-app.use(cors());
+
+// CORS configuration
+const corsOptions = {
+    origin: process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(',') : '*',
+    credentials: true,
+    optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
+
+// Security headers
 app.use(helmet({
     contentSecurityPolicy: {
         directives: {
@@ -83,18 +78,13 @@ app.use(helmet({
             mediaSrc: ["'self'"],
             frameSrc: ["'self'", "https:"]
         }
-    }
+    },
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: false
 }));
 
-// Routes
-app.use('/', mainRoutes);
-app.use('/admin', adminRoutes);
-app.use('/api/submissions', submissionRoutes);
-
-// Static files - serve from src/public
-const publicPath = path.join(__dirname, 'src', 'public');
-app.use(express.static(publicPath));
-Logger.info('Static files directory set to:', publicPath);
+// Add middleware to log all requests
+app.use(morgan('combined'));
 
 // Session configuration
 app.use(session({
@@ -108,9 +98,22 @@ app.use(session({
     cookie: {
         secure: process.env.NODE_ENV === 'production',
         httpOnly: true,
-        maxAge: 24 * 60 * 60 * 1000
+        maxAge: 24 * 60 * 60 * 1000,
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
     }
 }));
+
+// Rate limiting
+app.use(limiter);
+
+// Routes
+app.use('/', mainRoutes);
+app.use('/admin', adminRoutes);
+app.use('/api/submissions', submissionRoutes);
+
+// Static files - serve from src/public
+const publicPath = path.join(__dirname, 'src', 'public');
+app.use(express.static(publicPath));
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -120,7 +123,8 @@ app.use((err, req, res, next) => {
         title: 'Error',
         currentPage: '',
         style: '',
-        script: ''
+        script: '',
+        layout: 'layouts/main'
     });
 });
 
@@ -132,26 +136,33 @@ app.use((req, res) => {
         title: 'Error',
         currentPage: '',
         style: '',
-        script: ''
+        script: '',
+        layout: 'layouts/main'
     });
 });
 
-// Start server only after MongoDB connects
-mongoose.connection.once('open', () => {
-    Logger.info('MongoDB connected successfully');
-    const PORT = process.env.PORT || 3000;
-    app.listen(PORT, () => {
-        Logger.info(`Server is running on port ${PORT}`);
-        Logger.info('Server configuration:', {
-            environment: process.env.NODE_ENV,
-            viewEngine: app.get('view engine'),
-            viewsPath: app.get('views'),
-            layout: app.get('layout')
+// Start server
+const PORT = process.env.PORT || 3000;
+
+// Only start server if we're not in a test environment
+if (process.env.NODE_ENV !== 'test') {
+    mongoose.connection.once('open', () => {
+        Logger.info('MongoDB connected successfully');
+        app.listen(PORT, () => {
+            Logger.info(`Server is running on port ${PORT}`);
+            Logger.info('Server configuration:', {
+                environment: process.env.NODE_ENV,
+                viewEngine: app.get('view engine'),
+                viewsPath: app.get('views'),
+                layout: app.get('layout')
+            });
         });
     });
-});
 
-mongoose.connection.on('error', (err) => {
-    Logger.error('MongoDB connection error:', err);
-    process.exit(1);
-});
+    mongoose.connection.on('error', (err) => {
+        Logger.error('MongoDB connection error:', err);
+        process.exit(1);
+    });
+}
+
+export default app;

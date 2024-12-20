@@ -7,12 +7,21 @@ import { GridFSBucket } from 'mongodb';
 
 // Initialize GridFS bucket
 let gridfsBucket;
-mongoose.connection.once('open', () => {
-    gridfsBucket = new GridFSBucket(mongoose.connection.db, {
-        bucketName: 'resumes'
-    });
-    Logger.info('GridFS bucket initialized');
-});
+
+// Function to initialize GridFS bucket
+const initGridFS = () => {
+    if (!mongoose.connection || mongoose.connection.readyState !== 1) {
+        throw new Error('MongoDB connection not ready');
+    }
+    
+    if (!gridfsBucket) {
+        gridfsBucket = new GridFSBucket(mongoose.connection.db, {
+            bucketName: 'resumes'
+        });
+        Logger.info('GridFS bucket initialized');
+    }
+    return gridfsBucket;
+};
 
 // Create memory storage for temporary file handling
 const storage = multer.memoryStorage();
@@ -43,16 +52,13 @@ const upload = multer({
 
 // Function to upload file to GridFS
 const uploadToGridFS = async (fileBuffer, originalname, mimetype) => {
-    if (!gridfsBucket) {
-        throw new Error('GridFS bucket not initialized');
-    }
-
-    return new Promise((resolve, reject) => {
-        try {
-            const filename = crypto.randomBytes(16).toString('hex') + path.extname(originalname);
-            Logger.info('Starting file upload to GridFS:', { filename, originalname });
-            
-            const uploadStream = gridfsBucket.openUploadStream(filename, {
+    try {
+        const bucket = initGridFS();
+        const filename = crypto.randomBytes(16).toString('hex') + path.extname(originalname);
+        Logger.info('Starting file upload to GridFS:', { filename, originalname });
+        
+        return new Promise((resolve, reject) => {
+            const uploadStream = bucket.openUploadStream(filename, {
                 metadata: {
                     originalname,
                     mimetype,
@@ -67,7 +73,7 @@ const uploadToGridFS = async (fileBuffer, originalname, mimetype) => {
             });
 
             uploadStream.once('finish', function() {
-                const fileId = this.id; // Get the file ID from the upload stream
+                const fileId = this.id;
                 Logger.info('File upload completed:', {
                     fileId: fileId.toString(),
                     filename: filename
@@ -83,25 +89,22 @@ const uploadToGridFS = async (fileBuffer, originalname, mimetype) => {
             // Write the file buffer to GridFS
             uploadStream.write(fileBuffer);
             uploadStream.end();
-        } catch (error) {
-            Logger.error('Error in uploadToGridFS:', error);
-            reject(error);
-        }
-    });
+        });
+    } catch (error) {
+        Logger.error('Error in uploadToGridFS:', error);
+        throw error;
+    }
 };
 
 // Function to get file stream by ID
 const getFileStream = (fileId) => {
-    if (!gridfsBucket) {
-        throw new Error('GridFS bucket not initialized');
-    }
     try {
+        const bucket = initGridFS();
         const id = typeof fileId === 'string' ? new mongoose.Types.ObjectId(fileId) : fileId;
         Logger.info('Creating download stream for file:', { fileId: id.toString() });
         
-        const downloadStream = gridfsBucket.openDownloadStream(id);
+        const downloadStream = bucket.openDownloadStream(id);
         
-        // Add error handler to the stream
         downloadStream.on('error', (error) => {
             Logger.error('Error in download stream:', error);
             throw error;
@@ -116,13 +119,11 @@ const getFileStream = (fileId) => {
 
 // Function to delete file by ID
 const deleteFile = async (fileId) => {
-    if (!gridfsBucket) {
-        throw new Error('GridFS bucket not initialized');
-    }
     try {
+        const bucket = initGridFS();
         const id = typeof fileId === 'string' ? new mongoose.Types.ObjectId(fileId) : fileId;
         Logger.info('Deleting file:', { fileId: id.toString() });
-        await gridfsBucket.delete(id);
+        await bucket.delete(id);
     } catch (error) {
         Logger.error('Error deleting file:', error);
         throw error;
@@ -131,15 +132,12 @@ const deleteFile = async (fileId) => {
 
 // Function to get file info by ID
 const getFileInfo = async (fileId) => {
-    if (!gridfsBucket) {
-        throw new Error('GridFS bucket not initialized');
-    }
     try {
+        const bucket = initGridFS();
         const id = typeof fileId === 'string' ? new mongoose.Types.ObjectId(fileId) : fileId;
         Logger.info('Getting file info:', { fileId: id.toString() });
         
-        // First try to get the file info directly
-        const cursor = gridfsBucket.find({ _id: id });
+        const cursor = bucket.find({ _id: id });
         const files = await cursor.toArray();
         
         if (!files || files.length === 0) {
