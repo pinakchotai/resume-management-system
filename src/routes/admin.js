@@ -24,7 +24,14 @@ router.get('/', (req, res) => {
 
 // Admin login page
 router.get('/login', (req, res) => {
-    res.render('admin/login', { error: null });
+    res.render('admin/login', { 
+        title: 'Admin Login',
+        currentPage: 'admin-login',
+        style: '',
+        script: '',
+        layout: false,
+        error: null 
+    });
 });
 
 // Admin login
@@ -37,17 +44,45 @@ router.get('/logout', authMiddleware, adminController.logout);
 router.get('/dashboard', authMiddleware, adminController.dashboard);
 
 // View single submission
-router.get('/submissions/:id', authMiddleware, adminController.viewSubmission);
+router.get('/submissions/:id', authMiddleware, async (req, res) => {
+    try {
+        const submission = await adminController.viewSubmission(req, res);
+        res.render('admin/submission', {
+            title: 'View Submission',
+            currentPage: 'admin-submission',
+            style: '',
+            script: '',
+            layout: 'layouts/main',
+            submission
+        });
+    } catch (error) {
+        Logger.error('Error viewing submission:', error);
+        res.status(500).render('error', {
+            title: 'Error',
+            currentPage: 'error',
+            style: '',
+            script: '',
+            layout: 'layouts/main',
+            error: 'Error viewing submission'
+        });
+    }
+});
 
 // Download resume file
 router.get('/submissions/:id/download', authMiddleware, (req, res) => {
     try {
         Logger.info('Admin download request for submission:', req.params.id);
-        // Forward to the API endpoint
         res.redirect(`/api/submissions/${req.params.id}/download`);
     } catch (error) {
         Logger.error('Error in admin download route:', error);
-        res.status(500).render('error', { error: 'Error downloading file' });
+        res.status(500).render('error', {
+            title: 'Error',
+            currentPage: 'error',
+            style: '',
+            script: '',
+            layout: 'layouts/main',
+            error: 'Error downloading file'
+        });
     }
 });
 
@@ -130,6 +165,24 @@ router.post('/submissions/export-excel', authMiddleware, async (req, res) => {
     } catch (error) {
         Logger.error('Error exporting to Excel:', error);
         res.status(500).json({ error: 'Error generating Excel report' });
+    }
+});
+
+// Delete submission
+router.delete('/submissions/:id', authMiddleware, async (req, res) => {
+    try {
+        const submission = await Submission.findById(req.params.id);
+        if (!submission) {
+            return res.status(404).json({ error: 'Submission not found' });
+        }
+
+        // Delete the submission and associated file
+        await submission.remove();
+        Logger.info('Submission deleted successfully:', req.params.id);
+        res.json({ success: true, message: 'Submission deleted successfully' });
+    } catch (error) {
+        Logger.error('Error deleting submission:', error);
+        res.status(500).json({ error: 'Error deleting submission' });
     }
 });
 

@@ -18,6 +18,11 @@ export const login = async (req, res) => {
         if (!username || !password) {
             Logger.warn('Login attempt with missing credentials');
             return res.render('admin/login', { 
+                title: 'Admin Login',
+                currentPage: 'admin-login',
+                style: '',
+                script: '',
+                layout: 'layouts/main',
                 error: 'Username and password are required' 
             });
         }
@@ -32,6 +37,11 @@ export const login = async (req, res) => {
         if (!admin) {
             Logger.warn('Login attempt failed - user not found:', username);
             return res.render('admin/login', { 
+                title: 'Admin Login',
+                currentPage: 'admin-login',
+                style: '',
+                script: '',
+                layout: 'layouts/main',
                 error: 'Invalid credentials' 
             });
         }
@@ -53,6 +63,11 @@ export const login = async (req, res) => {
         if (!isValidPassword) {
             Logger.warn('Login attempt failed - invalid password for username:', username);
             return res.render('admin/login', { 
+                title: 'Admin Login',
+                currentPage: 'admin-login',
+                style: '',
+                script: '',
+                layout: 'layouts/main',
                 error: 'Invalid credentials' 
             });
         }
@@ -75,7 +90,14 @@ export const login = async (req, res) => {
         res.redirect('/admin/dashboard');
     } catch (error) {
         Logger.error('Login error:', error);
-        res.status(500).render('error', { error: 'Error during login' });
+        res.status(500).render('error', { 
+            title: 'Error',
+            currentPage: 'error',
+            style: '',
+            script: '',
+            layout: 'layouts/main',
+            error: 'Error during login' 
+        });
     }
 };
 
@@ -197,6 +219,11 @@ export const dashboard = async (req, res) => {
         });
 
         res.render('admin/dashboard', { 
+            title: 'Admin Dashboard',
+            currentPage: 'admin-dashboard',
+            style: '',
+            script: '',
+            layout: 'layouts/main',
             submissions,
             stats,
             moment,
@@ -206,6 +233,11 @@ export const dashboard = async (req, res) => {
     } catch (error) {
         Logger.error('Dashboard error:', error);
         res.status(500).render('error', { 
+            title: 'Error',
+            currentPage: 'error',
+            style: '',
+            script: '',
+            layout: 'layouts/main',
             error: 'Error loading dashboard: ' + error.message 
         });
     }
@@ -216,7 +248,14 @@ export const viewSubmission = async (req, res) => {
     try {
         const submission = await Submission.findById(req.params.id);
         if (!submission) {
-            return res.status(404).render('error', { error: 'Submission not found' });
+            return res.status(404).render('error', { 
+                title: 'Error',
+                currentPage: 'error',
+                style: '',
+                script: '',
+                layout: 'layouts/main',
+                error: 'Submission not found' 
+            });
         }
 
         Logger.info('Viewing submission:', {
@@ -236,12 +275,24 @@ export const viewSubmission = async (req, res) => {
         });
 
         res.render('admin/submission', { 
+            title: 'View Submission',
+            currentPage: 'admin-submission',
+            style: '',
+            script: '',
+            layout: 'layouts/main',
             submission,
             csrfToken
         });
     } catch (error) {
         Logger.error('View submission error:', error);
-        res.status(500).render('error', { error: 'Error viewing submission' });
+        res.status(500).render('error', { 
+            title: 'Error',
+            currentPage: 'error',
+            style: '',
+            script: '',
+            layout: 'layouts/main',
+            error: 'Error viewing submission' 
+        });
     }
 };
 

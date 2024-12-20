@@ -4,374 +4,201 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Dashboard - Resume Management System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
         :root {
-            --background-color: #B1ABAB;
+            --background-color: #f5f5f5;
             --card-background: #FFFFFF;
             --text-color: #000000;
-            --input-background: #D9D9D9;
-            --border-radius: 20px;
-            --header-background: #333333;
-            --status-pending-bg: #ffeeba;
-            --status-pending-color: #856404;
-            --status-reviewed-bg: #b8daff;
-            --status-reviewed-color: #004085;
-            --status-shortlisted-bg: #c3e6cb;
-            --status-shortlisted-color: #155724;
-            --status-rejected-bg: #f5c6cb;
-            --status-rejected-color: #721c24;
+            --primary-color: #0d6efd;
+        }
+
+        html, body {
+            height: 100%;
+            margin: 0;
         }
 
         body {
-            font-family: "Helvetica", Arial, sans-serif;
-            margin: 0;
-            padding: 0;
             background-color: var(--background-color);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
             min-height: 100vh;
         }
 
-        .header {
-            background-color: var(--header-background);
-            color: white;
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        .main-content {
+            flex: 1 0 auto;
+            padding-bottom: 2rem;
         }
 
-        .header h1 {
-            margin: 0;
-            font-size: 1.5rem;
-            font-family: "Helvetica", Arial, sans-serif;
+        .footer {
+            flex-shrink: 0;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 2rem 0;
+            margin-top: auto;
+        }
+
+        .navbar {
+            background-color: var(--primary-color);
+            padding: 1rem 2rem;
+        }
+
+        .navbar-brand {
+            color: white;
+            font-weight: bold;
         }
 
         .logout-btn {
-            background-color: transparent;
             color: white;
             border: 1px solid white;
-            padding: 0.75rem 1.5rem;
-            border-radius: 10px;
-            cursor: pointer;
-            font-family: "Helvetica", Arial, sans-serif;
-            font-weight: bold;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
             text-decoration: none;
         }
 
-        .container {
-            padding: 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
+        .logout-btn:hover {
+            background-color: white;
+            color: var(--primary-color);
         }
 
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .stat-card {
-            background: var(--card-background);
+        .stats-card {
+            background: white;
+            border-radius: 10px;
             padding: 1.5rem;
-            border-radius: var(--border-radius);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        .stat-card h3 {
-            margin: 0 0 0.5rem 0;
-            color: var(--text-color);
-            font-weight: bold;
-        }
-
-        .stat-card .value {
-            font-size: 2rem;
-            font-weight: bold;
-            color: var(--text-color);
-        }
-
-        .progress-container {
-            background: var(--card-background);
-            padding: 1.5rem;
-            border-radius: var(--border-radius);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-            margin-bottom: 2rem;
-        }
-
-        .progress-bar {
-            display: flex;
+        .progress {
             height: 25px;
+            margin: 1rem 0;
+        }
+
+        .table-container {
+            background: white;
             border-radius: 10px;
-            overflow: hidden;
-            width: 100%;
-        }
-
-        .progress-segment {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text-color);
-            font-weight: bold;
-            font-size: 0.9rem;
-            transition: width 0.3s ease;
-            padding: 0 1rem;
-            white-space: nowrap;
-        }
-
-        .progress-pending { 
-            background-color: var(--status-pending-bg);
-            color: var(--status-pending-color);
-        }
-        .progress-reviewed { 
-            background-color: var(--status-reviewed-bg);
-            color: var(--status-reviewed-color);
-        }
-        .progress-shortlisted { 
-            background-color: var(--status-shortlisted-bg);
-            color: var(--status-shortlisted-color);
-        }
-        .progress-rejected { 
-            background-color: var(--status-rejected-bg);
-            color: var(--status-rejected-color);
-        }
-
-        .submissions {
-            background: var(--card-background);
-            padding: 2rem;
-            border-radius: var(--border-radius);
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-        }
-
-        .submissions-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .submissions h2 {
-            margin: 0;
-            font-weight: bold;
-            color: var(--text-color);
-        }
-
-        .search-box {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-        }
-
-        .search-box input,
-        .search-box select {
-            padding: 0.75rem 1rem;
-            border: none;
-            border-radius: 10px;
-            background-color: var(--input-background);
-            font-family: "Helvetica", Arial, sans-serif;
-        }
-
-        .search-box input {
-            width: 300px;
-        }
-
-        .search-box select {
-            min-width: 200px;
-            cursor: pointer;
-        }
-
-        .filter-group {
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-        }
-
-        .filter-label {
-            font-weight: bold;
-            color: var(--text-color);
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-family: "Helvetica", Arial, sans-serif;
-        }
-
-        th, td {
-            padding: 1rem;
-            text-align: left;
-            border-bottom: 1px solid var(--input-background);
-        }
-
-        th {
-            background-color: var(--input-background);
-            font-weight: bold;
-            color: var(--text-color);
+            padding: 1.5rem;
+            margin-top: 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
         .status-badge {
             padding: 0.5rem 1rem;
-            border-radius: 10px;
-            font-weight: bold;
-            display: inline-block;
+            border-radius: 5px;
+            font-weight: 500;
         }
 
-        .status-badge.pending { background-color: var(--status-pending-bg); color: var(--status-pending-color); }
-        .status-badge.reviewed { background-color: var(--status-reviewed-bg); color: var(--status-reviewed-color); }
-        .status-badge.shortlisted { background-color: var(--status-shortlisted-bg); color: var(--status-shortlisted-color); }
-        .status-badge.rejected { background-color: var(--status-rejected-bg); color: var(--status-rejected-color); }
+        .status-pending { background-color: #fff3cd; color: #856404; }
+        .status-reviewed { background-color: #cce5ff; color: #004085; }
+        .status-shortlisted { background-color: #d4edda; color: #155724; }
+        .status-rejected { background-color: #f8d7da; color: #721c24; }
 
-        .view-btn {
-            padding: 0.5rem 1rem;
-            background-color: var(--input-background);
-            color: var(--text-color);
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            text-decoration: none;
-            font-weight: bold;
-            display: inline-block;
-        }
-
-        .bulk-actions {
-            margin-bottom: 1rem;
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-        }
-
-        .download-btn {
-            padding: 0.75rem 1.5rem;
-            background-color: var(--input-background);
-            color: var(--text-color);
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-family: "Helvetica", Arial, sans-serif;
-            font-weight: bold;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: background-color 0.3s ease;
-        }
-
-        .download-btn:hover {
-            background-color: #c8c8c8;
-        }
-
-        .download-btn:active {
-            background-color: #b8b8b8;
-        }
-
-        .download-btn#exportExcel {
-            background-color: #4CAF50;
+        .footer-link {
             color: white;
+            text-decoration: none;
         }
 
-        .download-btn#exportExcel:hover {
-            background-color: #45a049;
-        }
-
-        .download-btn#exportExcel:active {
-            background-color: #3d8b40;
-        }
-
-        .download-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .checkbox-cell {
-            width: 40px;
-            text-align: center;
-        }
-
-        .checkbox-input {
-            width: 18px;
-            height: 18px;
-            cursor: pointer;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                padding: 1rem;
-            }
-            
-            .stats {
-                grid-template-columns: 1fr;
-            }
-            
-            .search-box input {
-                width: 100%;
-            }
-            
-            .submissions {
-                padding: 1rem;
-            }
-            
-            .submissions-header {
-                flex-direction: column;
-                gap: 1rem;
-            }
-            
-            th, td {
-                padding: 0.75rem;
-            }
+        .footer-link:hover {
+            color: rgba(255, 255, 255, 0.8);
         }
     </style>
 </head>
 <body>
-    <header class="header">
-        <h1>Admin Dashboard</h1>
-        <a href="/admin/logout" class="logout-btn">Logout</a>
-    </header>
-
-    <div class="container">
-        <div class="stats">
-            <div class="stat-card">
-                <h3>Today's Submissions</h3>
-                <div class="value"><%= typeof stats !== 'undefined' && stats.todaySubmissions !== undefined ? stats.todaySubmissions : 0 %></div>
-            </div>
-            <div class="stat-card">
-                <h3>Pending Review</h3>
-                <div class="value"><%= typeof stats !== 'undefined' && stats.pendingReview !== undefined ? stats.pendingReview : 0 %></div>
-            </div>
-            <div class="stat-card">
-                <h3>Shortlisted</h3>
-                <div class="value"><%= typeof stats !== 'undefined' && stats.shortlisted !== undefined ? stats.shortlisted : 0 %></div>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="/admin/dashboard">RMS Admin</a>
+            <div class="d-flex">
+                <a href="/admin/logout" class="logout-btn">Logout</a>
             </div>
         </div>
+    </nav>
 
-        <div class="progress-container">
-            <div class="progress-bar">
-                <% if (typeof stats !== 'undefined' && stats.total > 0) { %>
-                    <div class="progress-segment progress-pending" data-percentage="<%= stats.percentages?.pending || 0 %>">
-                        Pending (<%= stats.pending || 0 %>)
+    <div class="main-content">
+        <div class="container mt-4">
+            <!-- Stats Cards -->
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="stats-card">
+                        <h3>Today's Submissions</h3>
+                        <h2 class="mb-0"><%= stats.todaySubmissions %></h2>
                     </div>
-                    <div class="progress-segment progress-reviewed" data-percentage="<%= stats.percentages?.reviewed || 0 %>">
-                        Reviewed (<%= stats.reviewed || 0 %>)
+                </div>
+                <div class="col-md-4">
+                    <div class="stats-card">
+                        <h3>Pending Review</h3>
+                        <h2 class="mb-0"><%= stats.pendingReview %></h2>
                     </div>
-                    <div class="progress-segment progress-shortlisted" data-percentage="<%= stats.percentages?.shortlisted || 0 %>">
-                        Shortlisted (<%= stats.shortlisted || 0 %>)
+                </div>
+                <div class="col-md-4">
+                    <div class="stats-card">
+                        <h3>Shortlisted</h3>
+                        <h2 class="mb-0"><%= stats.shortlisted %></h2>
                     </div>
-                    <div class="progress-segment progress-rejected" data-percentage="<%= stats.percentages?.rejected || 0 %>">
-                        Rejected (<%= stats.rejected || 0 %>)
-                    </div>
-                <% } else { %>
-                    <div class="progress-segment" style="flex-basis: 100%">
-                        No submissions yet
-                    </div>
-                <% } %>
+                </div>
             </div>
-        </div>
 
-        <div class="submissions">
-            <div class="submissions-header">
-                <h2>Recent Submissions</h2>
-                <div class="filter-group">
-                    <div class="search-box">
-                        <input type="text" id="searchInput" placeholder="Search by name or email...">
+            <!-- Progress Bar -->
+            <div class="stats-card mt-4">
+                <h3>Status Distribution</h3>
+                <div class="progress">
+                    <% if (stats.total > 0) { %>
+                        <div class="progress-bar bg-warning" role="progressbar" 
+                             style="width: <%= stats.percentages.pending %>%" 
+                             title="Pending: <%= stats.percentages.pending %>%">
+                            <%= stats.percentages.pending %>% Pending
+                        </div>
+                        <div class="progress-bar bg-info" role="progressbar" 
+                             style="width: <%= stats.percentages.reviewed %>%" 
+                             title="Reviewed: <%= stats.percentages.reviewed %>%">
+                            <%= stats.percentages.reviewed %>% Reviewed
+                        </div>
+                        <div class="progress-bar bg-success" role="progressbar" 
+                             style="width: <%= stats.percentages.shortlisted %>%" 
+                             title="Shortlisted: <%= stats.percentages.shortlisted %>%">
+                            <%= stats.percentages.shortlisted %>% Shortlisted
+                        </div>
+                        <div class="progress-bar bg-danger" role="progressbar" 
+                             style="width: <%= stats.percentages.rejected %>%" 
+                             title="Rejected: <%= stats.percentages.rejected %>%">
+                            <%= stats.percentages.rejected %>% Rejected
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- Recent Submissions -->
+            <div class="table-container">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3>Recent Submissions</h3>
+                    <div class="d-flex gap-3">
+                        <button class="btn btn-secondary" id="downloadSelected" disabled>
+                            Download Selected (<span id="selectedCount">0</span>)
+                        </button>
+                        <button class="btn btn-primary" id="exportExcel">Export to Excel</button>
                     </div>
-                    <div class="search-box">
-                        <select id="skillFilter">
+                </div>
+
+                <!-- Search and Filter Section -->
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <input type="text" 
+                               id="searchInput" 
+                               class="form-control" 
+                               placeholder="Search by name or email...">
+                    </div>
+                    <div class="col-md-4">
+                        <select id="statusFilter" class="form-select">
+                            <option value="">All Statuses</option>
+                            <option value="pending">Pending</option>
+                            <option value="reviewed">Reviewed</option>
+                            <option value="shortlisted">Shortlisted</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <select id="skillFilter" class="form-select">
                             <option value="">All Skills</option>
                             <% uniqueSkills.forEach(skill => { %>
                                 <option value="<%= skill %>"><%= skill.charAt(0).toUpperCase() + skill.slice(1) %></option>
@@ -379,258 +206,224 @@
                         </select>
                     </div>
                 </div>
-            </div>
 
-            <div class="bulk-actions">
-                <button id="downloadSelected" class="download-btn" disabled>
-                    Download Selected Resumes (0)
-                </button>
-                <button id="exportExcel" class="download-btn">
-                    Export to Excel
-                </button>
-            </div>
-
-            <% if (submissions && submissions.length > 0) { %>
-                <table>
-                    <thead>
-                        <tr>
-                            <th class="checkbox-cell">
-                                <input type="checkbox" id="selectAll" class="checkbox-input">
-                            </th>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Status</th>
-                            <th>Submitted</th>
-                            <th>Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <% submissions.forEach(function(submission) { %>
-                            <tr data-skills='<%= JSON.stringify(submission.skills) %>'>
-                                <td class="checkbox-cell">
-                                    <input type="checkbox" 
-                                           class="checkbox-input submission-checkbox" 
-                                           value="<%= submission._id %>"
-                                           data-name="<%= submission.fullName %>">
-                                </td>
-                                <td><%= submission.fullName || 'N/A' %></td>
-                                <td><%= submission.email || 'N/A' %></td>
-                                <td>
-                                    <span class="status-badge <%= submission.status || 'pending' %>">
-                                        <%= submission.status ? (submission.status.charAt(0).toUpperCase() + submission.status.slice(1)) : 'Pending' %>
-                                    </span>
-                                </td>
-                                <td>
-                                    <% try { %>
-                                        <% if (typeof moment !== 'undefined') { %>
-                                            <%= moment(submission.createdAt).fromNow() %>
-                                        <% } else { %>
-                                            <%= new Date(submission.createdAt).toLocaleString() %>
-                                        <% } %>
-                                    <% } catch (e) { %>
-                                        N/A
-                                    <% } %>
-                                </td>
-                                <td>
-                                    <a href="/admin/submissions/<%= submission._id %>" class="view-btn">View</a>
-                                </td>
+                <div class="table-responsive">
+                    <table class="table" id="submissionsTable">
+                        <thead>
+                            <tr>
+                                <th><input type="checkbox" id="selectAll"></th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Status</th>
+                                <th>Submitted</th>
+                                <th>Actions</th>
                             </tr>
-                        <% }); %>
-                    </tbody>
-                </table>
-            <% } else { %>
-                <div style="text-align: center; padding: 2rem;">No submissions found</div>
-            <% } %>
+                        </thead>
+                        <tbody>
+                            <% submissions.forEach(function(submission) { %>
+                                <tr data-skills='<%= JSON.stringify(submission.skills || []) %>'>
+                                    <td>
+                                        <input type="checkbox" class="submission-checkbox" 
+                                               data-id="<%= submission._id %>">
+                                    </td>
+                                    <td><%= submission.fullName %></td>
+                                    <td><%= submission.email %></td>
+                                    <td>
+                                        <span class="status-badge status-<%= submission.status || 'pending' %>">
+                                            <%= submission.status ? submission.status.charAt(0).toUpperCase() + submission.status.slice(1) : 'Pending' %>
+                                        </span>
+                                    </td>
+                                    <td><%= moment(submission.createdAt).fromNow() %></td>
+                                    <td>
+                                        <a href="/admin/submissions/<%= submission._id %>" 
+                                           class="btn btn-sm btn-primary">View</a>
+                                        <button class="btn btn-sm btn-danger delete-btn"
+                                                data-id="<%= submission._id %>"
+                                                data-name="<%= submission.fullName %>">
+                                            Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                            <% }); %>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-    // Add this at the beginning of the script section
-    // Set progress bar segment widths
-    document.querySelectorAll('.progress-segment[data-percentage]').forEach(segment => {
-        const percentage = segment.getAttribute('data-percentage');
-        if (percentage !== null) {
-            segment.style.flexBasis = `${percentage}%`;
-        }
-    });
+        document.addEventListener('DOMContentLoaded', function() {
+            const selectAll = document.getElementById('selectAll');
+            const checkboxes = document.querySelectorAll('.submission-checkbox');
+            const downloadBtn = document.getElementById('downloadSelected');
+            const selectedCountSpan = document.getElementById('selectedCount');
+            const exportExcelBtn = document.getElementById('exportExcel');
 
-    function filterSubmissions() {
-        try {
-            const searchTerm = document.getElementById('searchInput')?.value?.toLowerCase() || '';
-            const selectedSkill = document.getElementById('skillFilter')?.value?.toLowerCase() || '';
-            const rows = document.querySelectorAll('tbody tr');
-            
-            rows.forEach(row => {
-                try {
-                    const text = row.textContent.toLowerCase();
-                    let skills = [];
-                    try {
-                        const skillsData = row.getAttribute('data-skills');
-                        skills = skillsData ? JSON.parse(skillsData) : [];
-                    } catch (e) {
-                        console.error('Error parsing skills:', e);
-                        skills = [];
-                    }
-                    skills = skills.map(s => (s || '').toLowerCase());
-                    
-                    const matchesSearch = text.includes(searchTerm);
-                    const matchesSkill = !selectedSkill || skills.includes(selectedSkill);
-                    
-                    row.style.display = (matchesSearch && matchesSkill) ? '' : 'none';
-                } catch (e) {
-                    console.error('Error processing row:', e);
-                    row.style.display = '';
-                }
+            // Handle select all
+            selectAll.addEventListener('change', function() {
+                checkboxes.forEach(checkbox => {
+                    checkbox.checked = this.checked;
+                });
+                updateDownloadButton();
             });
-        } catch (e) {
-            console.error('Error in filterSubmissions:', e);
-        }
-    }
 
-    // Add data-skills attribute to each row safely
-    try {
-        document.querySelectorAll('tbody tr').forEach(row => {
-            try {
-                const skillsCell = row.querySelector('td[data-skills]');
-                if (skillsCell && skillsCell.getAttribute('data-skills')) {
-                    row.setAttribute('data-skills', skillsCell.getAttribute('data-skills'));
-                }
-            } catch (e) {
-                console.error('Error processing row skills:', e);
-            }
-        });
-    } catch (e) {
-        console.error('Error setting up skills data:', e);
-    }
+            // Handle individual checkboxes
+            checkboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', updateDownloadButton);
+            });
 
-    // Event listeners for both filters
-    try {
-        const searchInput = document.getElementById('searchInput');
-        const skillFilter = document.getElementById('skillFilter');
-        
-        if (searchInput) searchInput.addEventListener('input', filterSubmissions);
-        if (skillFilter) skillFilter.addEventListener('change', filterSubmissions);
-    } catch (e) {
-        console.error('Error setting up filters:', e);
-    }
-
-    // Bulk download functionality
-    try {
-        const selectAllCheckbox = document.getElementById('selectAll');
-        const submissionCheckboxes = document.querySelectorAll('.submission-checkbox');
-        const downloadButton = document.getElementById('downloadSelected');
-        
-        function updateDownloadButton() {
-            try {
+            // Update download button state
+            function updateDownloadButton() {
                 const selectedCount = document.querySelectorAll('.submission-checkbox:checked').length;
-                if (downloadButton) {
-                    downloadButton.disabled = selectedCount === 0;
-                    downloadButton.textContent = `Download Selected Resumes (${selectedCount})`;
-                }
-            } catch (e) {
-                console.error('Error updating download button:', e);
+                downloadBtn.disabled = selectedCount === 0;
+                selectedCountSpan.textContent = selectedCount;
             }
-        }
 
-        if (selectAllCheckbox) {
-            selectAllCheckbox.addEventListener('change', function() {
+            // Handle bulk download
+            downloadBtn.addEventListener('click', async function() {
+                const selectedIds = Array.from(document.querySelectorAll('.submission-checkbox:checked'))
+                    .map(checkbox => checkbox.dataset.id);
+
                 try {
-                    submissionCheckboxes.forEach(checkbox => {
-                        checkbox.checked = this.checked;
+                    const response = await fetch('/admin/submissions/bulk-download', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            ids: JSON.stringify(selectedIds),
+                            _csrf: '<%= csrfToken %>'
+                        })
                     });
-                    updateDownloadButton();
-                } catch (e) {
-                    console.error('Error in select all handler:', e);
+
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `resumes-${Date.now()}.zip`;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        a.remove();
+                    } else {
+                        const error = await response.json();
+                        alert(error.error || 'Error downloading files');
+                    }
+                } catch (error) {
+                    console.error('Download error:', error);
+                    alert('Error downloading files');
                 }
             });
-        }
 
-        submissionCheckboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', function() {
+            // Handle Excel export
+            exportExcelBtn.addEventListener('click', async function() {
                 try {
-                    const allChecked = Array.from(submissionCheckboxes).every(cb => cb.checked);
-                    if (selectAllCheckbox) selectAllCheckbox.checked = allChecked;
-                    updateDownloadButton();
-                } catch (e) {
-                    console.error('Error in checkbox handler:', e);
+                    const response = await fetch('/admin/submissions/export-excel', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (response.ok) {
+                        const blob = await response.blob();
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'submissions.xlsx';
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        a.remove();
+                    } else {
+                        const error = await response.json();
+                        alert(error.error || 'Error exporting to Excel');
+                    }
+                } catch (error) {
+                    console.error('Export error:', error);
+                    alert('Error exporting to Excel');
                 }
+            });
+
+            // Search and Filter Functionality
+            const searchInput = document.getElementById('searchInput');
+            const statusFilter = document.getElementById('statusFilter');
+            const skillFilter = document.getElementById('skillFilter');
+            const table = document.getElementById('submissionsTable');
+
+            function filterTable() {
+                const searchTerm = searchInput.value.toLowerCase();
+                const statusTerm = statusFilter.value.toLowerCase();
+                const skillTerm = skillFilter.value.toLowerCase();
+
+                const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+
+                for (let row of rows) {
+                    const name = row.cells[1].textContent.toLowerCase();
+                    const email = row.cells[2].textContent.toLowerCase();
+                    const status = row.cells[3].textContent.toLowerCase();
+                    const skills = row.getAttribute('data-skills') ? JSON.parse(row.getAttribute('data-skills')).map(s => s.toLowerCase()) : [];
+
+                    const matchesSearch = name.includes(searchTerm) || email.includes(searchTerm);
+                    const matchesStatus = !statusTerm || status.includes(statusTerm);
+                    const matchesSkill = !skillTerm || skills.includes(skillTerm);
+
+                    row.style.display = (matchesSearch && matchesStatus && matchesSkill) ? '' : 'none';
+                }
+            }
+
+            // Add event listeners for search and filters
+            searchInput.addEventListener('input', filterTable);
+            statusFilter.addEventListener('change', filterTable);
+            skillFilter.addEventListener('change', filterTable);
+
+            // Add skills data to rows
+            const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+            for (let row of rows) {
+                const skills = row.getAttribute('data-skills');
+                if (!skills) {
+                    // If skills aren't set, try to get them from the submission data
+                    const submission = submissions.find(s => 
+                        s.fullName === row.cells[1].textContent.trim() && 
+                        s.email === row.cells[2].textContent.trim()
+                    );
+                    if (submission && submission.skills) {
+                        row.setAttribute('data-skills', JSON.stringify(submission.skills));
+                    }
+                }
+            }
+
+            // Delete functionality
+            document.querySelectorAll('.delete-btn').forEach(button => {
+                button.addEventListener('click', async function() {
+                    const id = this.dataset.id;
+                    const name = this.dataset.name;
+                    
+                    if (confirm(`Are you sure you want to delete the submission from ${name}?`)) {
+                        try {
+                            const response = await fetch(`/admin/submissions/${id}`, {
+                                method: 'DELETE'
+                            });
+
+                            if (response.ok) {
+                                // Remove the row from the table
+                                this.closest('tr').remove();
+                                alert('Submission deleted successfully');
+                            } else {
+                                const error = await response.json();
+                                alert(error.error || 'Error deleting submission');
+                            }
+                        } catch (error) {
+                            console.error('Delete error:', error);
+                            alert('Error deleting submission');
+                        }
+                    }
+                });
             });
         });
-
-        if (downloadButton) {
-            downloadButton.addEventListener('click', async function() {
-                try {
-                    const selectedIds = Array.from(document.querySelectorAll('.submission-checkbox:checked'))
-                        .map(checkbox => checkbox.value)
-                        .filter(id => id);
-                    
-                    if (selectedIds.length === 0) return;
-
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = '/admin/submissions/bulk-download';
-                    form.style.display = 'none';
-
-                    // Add CSRF token if available
-                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-                    if (csrfToken) {
-                        const csrfInput = document.createElement('input');
-                        csrfInput.type = 'hidden';
-                        csrfInput.name = '_csrf';
-                        csrfInput.value = csrfToken;
-                        form.appendChild(csrfInput);
-                    }
-
-                    const idsInput = document.createElement('input');
-                    idsInput.type = 'hidden';
-                    idsInput.name = 'ids';
-                    idsInput.value = JSON.stringify(selectedIds);
-                    form.appendChild(idsInput);
-
-                    document.body.appendChild(form);
-                    form.submit();
-                } catch (error) {
-                    console.error('Error downloading files:', error);
-                    alert('Error downloading files. Please try again.');
-                }
-            });
-        }
-    } catch (e) {
-        console.error('Error setting up bulk download:', e);
-    }
-
-    // Excel export functionality
-    try {
-        const exportButton = document.getElementById('exportExcel');
-        if (exportButton) {
-            exportButton.addEventListener('click', async function() {
-                try {
-                    const form = document.createElement('form');
-                    form.method = 'POST';
-                    form.action = '/admin/submissions/export-excel';
-                    form.style.display = 'none';
-
-                    // Add CSRF token if available
-                    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
-                    if (csrfToken) {
-                        const csrfInput = document.createElement('input');
-                        csrfInput.type = 'hidden';
-                        csrfInput.name = '_csrf';
-                        csrfInput.value = csrfToken;
-                        form.appendChild(csrfInput);
-                    }
-
-                    document.body.appendChild(form);
-                    form.submit();
-                } catch (error) {
-                    console.error('Error exporting to Excel:', error);
-                    alert('Error exporting to Excel. Please try again.');
-                }
-            });
-        }
-    } catch (e) {
-        console.error('Error setting up Excel export:', e);
-    }
     </script>
 </body>
 </html> 

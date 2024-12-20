@@ -1,0 +1,148 @@
+<!-- Submit Hero Section -->
+<section class="submit-hero bg-primary text-white py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-md-8 mx-auto text-center">
+                <h1 class="display-4 mb-4">Submit Your Resume</h1>
+                <p class="lead">Take the first step towards your next opportunity. Submit your resume and let us help you find the perfect match.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Instructions Section -->
+<section class="instructions py-5 bg-light">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <div class="display-4 text-primary mb-3">1</div>
+                        <h3 class="card-title h4">Prepare Your Resume</h3>
+                        <p class="card-text">Ensure your resume is up-to-date and saved in PDF, DOC, or DOCX format.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <div class="display-4 text-primary mb-3">2</div>
+                        <h3 class="card-title h4">Fill the Form</h3>
+                        <p class="card-text">Complete all required fields with accurate information about your experience.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card h-100">
+                    <div class="card-body text-center">
+                        <div class="display-4 text-primary mb-3">3</div>
+                        <h3 class="card-title h4">Track Status</h3>
+                        <p class="card-text">After submission, you can track the status of your application.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Submission Form Section -->
+<section class="submission-form py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-8 mx-auto">
+                <div class="form-container">
+                    <div class="card">
+                        <h1>Submit Your Resume</h1>
+                        <form id="resumeForm" action="/api/submissions" method="POST" enctype="multipart/form-data">
+                            <div class="form-group">
+                                <label for="fullName">Full Name *</label>
+                                <input type="text" class="form-control" id="fullName" name="fullName" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="email">Email Address *</label>
+                                <input type="email" class="form-control" id="email" name="email" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="phone">Phone Number *</label>
+                                <input type="tel" class="form-control" id="phone" name="phone" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="experience">Years of Experience *</label>
+                                <input type="number" class="form-control" id="experience" name="experience" min="0" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="currentRole">Current Role</label>
+                                <input type="text" class="form-control" id="currentRole" name="currentRole">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="skills">Skills (comma-separated) *</label>
+                                <input type="text" class="form-control" id="skills" name="skills" required>
+                                <div class="form-text">Example: JavaScript, Python, React, Node.js</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="resume">Resume File *</label>
+                                <div class="file-upload-area">
+                                    <input type="file" class="file-upload-button" id="resume" name="resume" accept=".pdf,.doc,.docx" required>
+                                    <div class="file-name"></div>
+                                </div>
+                                <div class="form-text">Accepted formats: PDF, DOC, DOCX (Max size: 5MB)</div>
+                            </div>
+
+                            <button type="submit" class="submit-button">Submit Resume</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Success Modal -->
+<div class="modal fade" id="successModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Success!</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Your resume has been submitted successfully. We will review it and get back to you soon.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('resumeForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    
+    try {
+        const response = await fetch('/api/submissions', {
+            method: 'POST',
+            body: formData
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+            alert('Resume submitted successfully!');
+            this.reset();
+        } else {
+            throw new Error(result.error || 'Failed to submit resume');
+        }
+    } catch (error) {
+        alert(error.message || 'Error submitting resume. Please try again.');
+        console.error('Error:', error);
+    }
+});</script> 
