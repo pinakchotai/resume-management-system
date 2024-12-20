@@ -17,14 +17,18 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/resume
 const options = {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 30000, // Increased timeout to 30 seconds
-    socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
+    serverSelectionTimeoutMS: 30000,
+    socketTimeoutMS: 45000,
     retryWrites: true,
     w: 'majority',
     maxPoolSize: 10,
     minPoolSize: 5,
     maxIdleTimeMS: 10000,
-    retryReads: true
+    retryReads: true,
+    directConnection: false,
+    replicaSet: 'atlas-nkxjvl-shard-0',
+    ssl: true,
+    authSource: 'admin'
 };
 
 let cachedConnection = null;
@@ -34,15 +38,20 @@ let cachedConnection = null;
  * Returns a promise that resolves when connected
  */
 const connectDB = async () => {
-    if (cachedConnection) {
+    if (cachedConnection && mongoose.connection.readyState === 1) {
         Logger.info('Using cached database connection');
         return cachedConnection;
     }
 
     try {
         Logger.info('Connecting to MongoDB...');
-        const conn = await mongoose.connect(MONGODB_URI, options);
         
+        // Clear any existing connections
+        if (mongoose.connection.readyState !== 0) {
+            await mongoose.connection.close();
+        }
+
+        const conn = await mongoose.connect(MONGODB_URI, options);
         cachedConnection = conn;
 
         Logger.info('=================================');
@@ -51,7 +60,7 @@ const connectDB = async () => {
         Logger.info(`Database: ${conn.connection.name}`);
         Logger.info('=================================');
 
-        // Handle connection errors after initial connection
+        // Handle connection errors
         mongoose.connection.on('error', err => {
             Logger.error('MongoDB connection error:', err);
             cachedConnection = null;
@@ -66,12 +75,27 @@ const connectDB = async () => {
             Logger.info('MongoDB reconnected');
         });
 
+        process.on('SIGINT', async () => {
+            await mongoose.connection.close();
+            process.exit(0);
+        });
+
         return conn;
     } catch (error) {
         Logger.error('MongoDB connection error:', error);
         cachedConnection = null;
-        throw error; // Don't exit process, let the caller handle the error
+        
+        // Add more detailed error logging
+        if (error.name === 'MongooseServerSelectionError') {
+            Logger.error('Server Selection Error Details:', {
+                message: error.message,
+                reason: error.reason,
+                hosts: Array.from(error.reason?.servers?.keys() || [])
+            });
+        }
+        
+        throw error;
     }
 };
 
-export default connectDB; 
+export default connectDB;
